@@ -1,0 +1,33 @@
+services:
+  # Servicio de la Base de Datos
+  db:
+    image: postgres:15-alpine
+    container_name: mapadb
+    environment:
+      - POSTGRES_DB=mapacarreras_db
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+
+  # Servicio de la Aplicación Django
+  web:
+    build: .
+    container_name: mapaweb
+    entrypoint: /app/entrypoint.sh
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DB_NAME=mapacarreras_db
+      - DB_USER=admin
+      - DB_PASS=admin
+      - DB_HOST=db
+      - DB_PORT=5432
+
+volumes:
+  postgres_data:

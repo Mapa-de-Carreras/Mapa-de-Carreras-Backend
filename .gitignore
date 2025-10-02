@@ -1,0 +1,16 @@
+# Entorno virtual y dependencias locales
+venv/
+env/
+
+# Archivos compilados de Python
+__pycache__/
+*.pyc
+
+# Base de datos local de SQLite (buena práctica ignorarla siempre)
+db.sqlite3
+
+# Archivos de entorno (para guardar contraseñas y secretos)
+.env
+
+# Archivos de Docker y del sistema operativo
+.DS_Store

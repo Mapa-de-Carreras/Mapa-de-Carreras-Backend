@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from .models import *
+from gestion_academica.models import *
 
 
 # --- ESTRUCTURA ACADÉMICA ---
@@ -133,7 +133,7 @@ class UsuarioRolesTests(TestCase):
         """Prueba la creación de un Usuario personalizado y la asignación de un Rol."""
         RolUsuario.objects.create(usuario=self.usuario, rol=self.rol_docente)
         self.assertIn(self.rol_docente, self.usuario.roles.all())
-        self.assertEqual(str(self.usuario), "Pérez, Juan")
+        self.assertEqual(str(self.usuario), "Pérez Juan")
 
 
 class NotificacionesTests(TestCase):

@@ -1,7 +1,7 @@
 # gestion_academica/admin.py
 
 from django.contrib import admin
-from .models import (
+from gestion_academica.models import (
     Instituto, Carrera, Resolucion, Asignatura, PlanDeEstudio, PlanAsignatura,
     Correlativa, Comision, Rol, Usuario, RolUsuario, Notificacion,
     UsuarioNotificacion, Caracter, Modalidad, Cargo, Docente,

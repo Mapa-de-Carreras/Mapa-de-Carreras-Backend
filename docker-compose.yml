@@ -3,29 +3,35 @@ services:
   db:
     image: postgres:15-alpine
     container_name: mapadb
-    environment:
-      - POSTGRES_DB=mapacarreras_db
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=admin
+    env_file:
+      - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data/
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   # Servicio de la Aplicación Django
   web:
     build: .
     container_name: mapaweb
-    entrypoint: /app/entrypoint.sh
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - .:/app
+      - .:/app:rw
     ports:
       - "8000:8000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
     environment:
-      - DB_NAME=mapacarreras_db
-      - DB_USER=admin
-      - DB_PASS=admin
+      - DB_NAME=${POSTGRES_DB}
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASS=${POSTGRES_PASSWORD}
       - DB_HOST=db
       - DB_PORT=5432
 

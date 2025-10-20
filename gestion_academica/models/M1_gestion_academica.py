@@ -85,7 +85,6 @@ class Asignatura(models.Model):
     nombre = models.CharField(max_length=255)
     activo = models.BooleanField(default=True)
 
-    anio = models.PositiveIntegerField(default=1)
     cuatrimestre = models.PositiveIntegerField(default=1)
 
     tipo_asignatura = models.CharField(
@@ -113,12 +112,38 @@ class Asignatura(models.Model):
         return self.nombre
 
 
+class Documento(models.Model):
+    """
+    Representa un documento administrativo o normativo emitido por la institución.
+    """
+    tipo = models.CharField(max_length=30, blank=True, null=True)
+    emisor = models.CharField(max_length=200, blank=True, null=True)
+    numero = models.CharField(max_length=50, blank=True, null=True)
+    anio = models.PositiveIntegerField(blank=True, null=True)
+    # tambien se añade un atributo para el propio documento
+    archivo = models.FileField(upload_to="documentos/", blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["tipo", "emisor", "numero", "anio"], name="uq_documento_identificador"
+            )
+        ]
+        ordering = ["-anio", "emisor", "numero"]
+
+    def __str__(self):
+        return f"{self.tipo} {self.emisor} N°{self.numero}/{self.anio}"
+
+
 class PlanDeEstudio(models.Model):
     """Define la estructura de un plan de estudios para una carrera."""
     fecha_inicio = models.DateField()
     esta_vigente = models.BooleanField(default=True)
 
-    documento = models.FileField(upload_to="planes/", blank=True, null=True)
+    documento = models.ForeignKey(
+        Documento, on_delete=models.SET_NULL, blank=True, null=True, related_name="planes")
 
     resolucion = models.ForeignKey(
         Resolucion, on_delete=models.PROTECT, related_name="plan")
@@ -155,6 +180,7 @@ class PlanAsignatura(models.Model):
     plan_de_estudio = models.ForeignKey(
         PlanDeEstudio, on_delete=models.CASCADE)
     asignatura = models.ForeignKey(Asignatura, on_delete=models.CASCADE)
+    anio = models.PositiveIntegerField(null=False, default=1)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -169,7 +195,7 @@ class PlanAsignatura(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.plan_de_estudio} - {self.asignatura}"
+        return f"{self.plan_de_estudio} - {self.asignatura} (año {self.anio})"
 
 
 class Correlativa(models.Model):
@@ -194,13 +220,17 @@ class Correlativa(models.Model):
             raise ValidationError(
                 'Una asignatura no puede ser correlativa de sí misma.')
 
+        origen_anio = getattr(self.plan_asignatura, 'anio', None)
+        requerida_anio = getattr(self.correlativa_requerida, 'anio', None)
+
         asignatura_origen = self.plan_asignatura.asignatura
         asignatura_requerida = self.correlativa_requerida.asignatura
 
-        if asignatura_origen.anio == asignatura_requerida.anio and asignatura_origen.cuatrimestre == asignatura_requerida.cuatrimestre:
-            raise ValidationError(
-                'No se pueden establecer correlativas entre asignaturas del mismo año y cuatrimestre.'
-            )
+        if origen_anio is not None and requerida_anio is not None:
+            if origen_anio == requerida_anio and asignatura_origen.cuatrimestre == asignatura_requerida.cuatrimestre:
+                raise ValidationError(
+                    'No se pueden establecer correlativas entre asignaturas del mismo año y cuatrimestre.'
+                )
 
     def __str__(self):
         return f"{self.plan_asignatura.asignatura.nombre} requiere {self.correlativa_requerida.asignatura.nombre}"

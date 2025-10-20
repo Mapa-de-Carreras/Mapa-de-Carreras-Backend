@@ -1,6 +1,6 @@
 from .M1_gestion_academica import (
     Instituto, Carrera, Resolucion, Asignatura,
-    PlanDeEstudio, PlanAsignatura, Correlativa
+    PlanDeEstudio, PlanAsignatura, Correlativa, Documento
 )
 
 from .M4_gestion_usuarios_autenticacion import (

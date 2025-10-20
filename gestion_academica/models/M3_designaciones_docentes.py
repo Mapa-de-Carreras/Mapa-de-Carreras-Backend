@@ -70,8 +70,9 @@ class Designacion(models.Model):
         Cargo, on_delete=models.PROTECT, null=False, related_name="designaciones")
 
     observacion = models.TextField(blank=True, null=True)
-    documento = models.FileField(
-        upload_to="designaciones/", blank=True, null=True)
+
+    documento = models.ForeignKey("gestion_academica.Documento", on_delete=models.SET_NULL,
+                                  null=True, blank=True, related_name="designaciones")
 
     creado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,

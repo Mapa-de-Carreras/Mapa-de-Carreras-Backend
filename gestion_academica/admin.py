@@ -5,7 +5,7 @@ from gestion_academica.models import (
     Instituto, Carrera, Resolucion, Asignatura, PlanDeEstudio, PlanAsignatura,
     Correlativa, Comision, Rol, Usuario, RolUsuario, Notificacion,
     UsuarioNotificacion, Caracter, Modalidad, Cargo, Docente,
-    CarreraCoordinacion, Coordinador, Dedicacion, ParametrosRegimen, Designacion
+    CarreraCoordinacion, Coordinador, Dedicacion, ParametrosRegimen, Designacion, Documento
 )
 
 # Registra todos los modelos para que aparezcan en el panel de admin.
@@ -13,7 +13,7 @@ modelos_a_registrar = [
     Instituto, Carrera, Resolucion, Asignatura, PlanDeEstudio, PlanAsignatura,
     Correlativa, Comision, Rol, Usuario, RolUsuario, Notificacion,
     UsuarioNotificacion, Caracter, Modalidad, Cargo, Docente,
-    CarreraCoordinacion, Coordinador, Dedicacion, ParametrosRegimen, Designacion
+    CarreraCoordinacion, Coordinador, Dedicacion, ParametrosRegimen, Designacion, Documento
 ]
 
 for modelo in modelos_a_registrar:

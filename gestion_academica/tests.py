@@ -35,15 +35,15 @@ class ResolucionPlanAsignaturaTests(TestCase):
 
         # Asignaturas para pruebas de correlatividad
         self.asig1 = Asignatura.objects.create(
-            codigo="ALG1", nombre="Algoritmos I", anio=1, cuatrimestre=1,
+            codigo="ALG1", nombre="Algoritmos I", cuatrimestre=1,
             tipo_asignatura="OBLIGATORIA", tipo_duracion="CUATRIMESTRAL",
             horas_teoria=40, horas_practica=20)
         self.asig2 = Asignatura.objects.create(
-            codigo="ALG2", nombre="Algoritmos II", anio=1, cuatrimestre=2,
+            codigo="ALG2", nombre="Algoritmos II", cuatrimestre=2,
             tipo_asignatura="OBLIGATORIA", tipo_duracion="CUATRIMESTRAL",
             horas_teoria=40, horas_practica=20)
         self.asig3 = Asignatura.objects.create(
-            codigo="FIS1", nombre="Física I", anio=1, cuatrimestre=1,
+            codigo="FIS1", nombre="Física I", cuatrimestre=1,
             tipo_asignatura="OBLIGATORIA", tipo_duracion="CUATRIMESTRAL",
             horas_teoria=30, horas_practica=30)
 
@@ -56,21 +56,21 @@ class ResolucionPlanAsignaturaTests(TestCase):
         plan = PlanDeEstudio.objects.create(
             carrera=self.carrera, resolucion=self.resolucion, fecha_inicio="2024-01-01")
         pa1 = PlanAsignatura.objects.create(
-            plan_de_estudio=plan, asignatura=self.asig1)
+            plan_de_estudio=plan, asignatura=self.asig1, anio=1)
         pa2 = PlanAsignatura.objects.create(
-            plan_de_estudio=plan, asignatura=self.asig2)
+            plan_de_estudio=plan, asignatura=self.asig2, anio=1)
         self.assertEqual(plan.asignaturas.count(), 2)
         self.assertIn(self.asig1, plan.asignaturas.all())
-        self.assertEqual(str(pa1), f"{plan} - {self.asig1}")
+        self.assertEqual(str(pa1), f"{plan} - {self.asig1} (año {pa1.anio})")
 
     def test_correlativa_valida(self):
         """Prueba que se puede crear una correlativa válida entre asignaturas de distintos períodos."""
         plan = PlanDeEstudio.objects.create(
             carrera=self.carrera, resolucion=self.resolucion, fecha_inicio="2024-01-01")
         pa1 = PlanAsignatura.objects.create(
-            plan_de_estudio=plan, asignatura=self.asig1)
+            plan_de_estudio=plan, asignatura=self.asig1, anio=1)
         pa2 = PlanAsignatura.objects.create(
-            plan_de_estudio=plan, asignatura=self.asig2)
+            plan_de_estudio=plan, asignatura=self.asig2, anio=2)
         correlativa = Correlativa(
             plan_asignatura=pa2, correlativa_requerida=pa1)
         correlativa.clean()
@@ -82,7 +82,7 @@ class ResolucionPlanAsignaturaTests(TestCase):
         plan = PlanDeEstudio.objects.create(
             carrera=self.carrera, resolucion=self.resolucion, fecha_inicio="2024-01-01")
         pa1 = PlanAsignatura.objects.create(
-            plan_de_estudio=plan, asignatura=self.asig1)
+            plan_de_estudio=plan, asignatura=self.asig1, anio=1)
 
         correlativa_invalida = Correlativa(
             plan_asignatura=pa1, correlativa_requerida=pa1)
@@ -94,10 +94,11 @@ class ResolucionPlanAsignaturaTests(TestCase):
         """Prueba que el modelo rechaza correlativas en el mismo año y cuatrimestre."""
         plan = PlanDeEstudio.objects.create(
             carrera=self.carrera, resolucion=self.resolucion, fecha_inicio="2024-01-01")
+
         pa1 = PlanAsignatura.objects.create(
-            plan_de_estudio=plan, asignatura=self.asig1)
+            plan_de_estudio=plan, asignatura=self.asig1, anio=1)
         pa3 = PlanAsignatura.objects.create(
-            plan_de_estudio=plan, asignatura=self.asig3)
+            plan_de_estudio=plan, asignatura=self.asig3, anio=1)
 
         correlativa_invalida = Correlativa(
             plan_asignatura=pa1,

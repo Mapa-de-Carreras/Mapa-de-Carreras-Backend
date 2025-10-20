@@ -53,9 +53,12 @@ Para ejecutar comandos de Django (como `createsuperuser` o `makemigrations`), ab
     ```bash
     docker compose exec web python manage.py shell
     ```
----
 
----
+* **Ejecutar las pruebas automáticas**:
+    ```bash
+    docker compose exec web python manage.py test gestion_academica.tests.tests
+    ```
+
 ### Nota 
 
 El proyecto usa la sintaxis moderna de Docker Compose (V2)

@@ -1,4 +1,4 @@
-# gestion_academica/tests/test_serializers.py
+# gestion_academica/tests/tests_serializers.py
 
 from django.test import TestCase
 from django.contrib.auth import get_user_model

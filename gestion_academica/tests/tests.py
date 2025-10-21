@@ -1,3 +1,6 @@
+# gestion_academica/tests/tests.py
+
+
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 from django.utils import timezone

@@ -5,9 +5,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from ..serializers.gestion_usuario_serializer.login_serializer import LoginSerializer, LogoutSerializer
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from rest_framework.permissions import AllowAny
 
 class LoginView(APIView):
-    # --- AÑADE ESTE DECORADOR ---
+    permission_classes = [AllowAny]
     @swagger_auto_schema(
         request_body=LoginSerializer,
         responses={200: openapi.Response("Login exitoso", schema=openapi.Schema(
@@ -34,7 +35,7 @@ class LoginView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LogoutView(APIView):
-    # --- AÑADE ESTE DECORADOR ---
+    permission_classes = [AllowAny]
     @swagger_auto_schema(
         request_body=LogoutSerializer,
         responses={200: "Sesión cerrada correctamente"}

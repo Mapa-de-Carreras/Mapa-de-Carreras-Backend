@@ -4,7 +4,7 @@ from .M1_gestion_academica import (
 )
 
 from .M4_gestion_usuarios_autenticacion import (
-    UsuarioManager, Usuario, Rol, RolUsuario,
+    Usuario, Rol, RolUsuario,
     Notificacion, UsuarioNotificacion, CarreraCoordinacion,
     Coordinador
 )

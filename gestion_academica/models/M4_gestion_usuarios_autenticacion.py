@@ -3,58 +3,38 @@
 '''
 MODULO 4: GESTIÓN DE USUARIOS Y AUTENTICACIÓN
 
-Incluye las entidades UsuarioManager, Usuario, Rol, RolUsuario, 
+Incluye las entidades Usuario, Rol, RolUsuario, 
 Notificacion, UsuarioNotificacion, CarreraCoordinacion y Coordinador
 '''
 
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
+from django.utils.crypto import get_random_string
 from .M1_gestion_academica import Carrera
 
-
-class UsuarioManager(BaseUserManager):
-    def create_user(self, legajo, password=None, **extra_fields):
-        if not legajo:
-            raise ValueError('El legajo es obligatorio')
-        user = self.model(legajo=legajo, **extra_fields)
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
-
-    def create_superuser(self, legajo, password=None, **extra_fields):
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
-        user = self.create_user(legajo, password, **extra_fields)
-        admin_rol, _ = Rol.objects.get_or_create(nombre='Administrador')
-        user.roles.add(admin_rol)
-        return user
-
-
-class Usuario(AbstractBaseUser):
+class Usuario(AbstractUser):
     """Modelo base para todos los usuarios del sistema."""
     legajo = models.CharField(max_length=20, unique=True)
-    nombre = models.CharField(max_length=30)
-    apellido = models.CharField(max_length=30)
     fecha_nacimiento = models.DateField(null=True, blank=True)
-    email = models.EmailField(unique=True)
     celular = models.CharField(max_length=50, blank=True, null=True)
-
-    # campos para el panel de admin
-    is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
-    is_superuser = models.BooleanField(default=False)
-
-    # manager del modelo
-    objects = UsuarioManager()
 
     # definicion de la relacion muchos a muchos a traves del modelo puente
     roles = models.ManyToManyField(
         "Rol", through="RolUsuario", related_name="usuarios")
+    
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['email'], name='uq_email_unico')
+        ]
 
-    USERNAME_FIELD = "legajo"  # este es el campo de inicio de sesion
     # campos requeridos al crear un superusuario
-    REQUIRED_FIELDS = ["nombre", "apellido", "email"]
+    REQUIRED_FIELDS = ["email", "first_name", "last_name"]
+
+    def generate_verification_token(self):
+        """Genera un token aleatorio para la verificación del email"""
+        self.verification_token = get_random_string(64)
+        self.save()
 
     def has_perm(self, perm, obj=None):
         """¿Tiene el usuario un permiso específico?"""
@@ -67,13 +47,13 @@ class Usuario(AbstractBaseUser):
         return self.is_superuser
 
     def __str__(self):
-        return f"{self.apellido} {self.nombre}"
+        return f"{self.username}"
 
 
 class Rol(models.Model):
     """Tabla catálogo para los roles del sistema (Admin, Coordinador, Docente)."""
     nombre = models.CharField(max_length=20, unique=True)
-    description = models.CharField(max_length=255, blank=True)
+    descripcion = models.CharField(max_length=255, blank=True)
 
     def __str__(self):
         return self.nombre
@@ -174,4 +154,4 @@ class Coordinador(Usuario):
         "gestion_academica.Carrera", through=CarreraCoordinacion, related_name='coordinadores')
 
     def __str__(self):
-        return f"{self.apellido} {self.nombre}"
+        return f"{self.last_name} {self.first_name}"

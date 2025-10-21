@@ -82,7 +82,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # Extrae los datos de la contraseña
         validated_data.pop('old_password', None)
-        # validated_data.pop('password2', None)
+        validated_data.pop('password2', None)
     
         # Crea el usuario y asocia la dirección creada
         usuario = Usuario.objects.create_user(

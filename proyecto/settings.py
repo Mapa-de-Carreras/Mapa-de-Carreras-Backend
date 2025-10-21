@@ -41,7 +41,11 @@ INSTALLED_APPS = [
 
     "gestion_academica",
 
-    "rest_framework",
+    # --- Apps de Terceros ---
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist', # Para el Logout
+    'drf_yasg',                                 # Para Swagger
 ]
 
 MIDDLEWARE = [
@@ -132,3 +136,40 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = "gestion_academica.Usuario"
+
+AUTHENTICATION_BACKENDS = [
+    'gestion_academica.backends.auth_backends.EmailOrUsernameBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+# --- Configuración de Django REST Framework (DRF) ---
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+}
+
+# --- Configuración de Simple JWT ---
+from datetime import timedelta
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+}
+
+# --- Configuración de Swagger ---
+SWAGGER_SETTINGS = {
+    'USE_SESSION_AUTH': False,
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': 'Usá: Bearer <tu_token_de_acceso>',
+        }
+    }
+}

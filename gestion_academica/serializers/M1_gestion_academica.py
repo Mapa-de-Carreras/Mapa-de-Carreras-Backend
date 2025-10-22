@@ -130,4 +130,5 @@ class CorrelativaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Correlativa
+
         fields = ["id", "plan_asignatura", "correlativa_requerida"]

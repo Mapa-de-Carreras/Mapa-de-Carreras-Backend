@@ -123,4 +123,5 @@ class DocenteSerializer(serializers.ModelSerializer):
         for key, val in validated_data.items():
             setattr(instance, key, val)
         instance.save()
+
         return instance

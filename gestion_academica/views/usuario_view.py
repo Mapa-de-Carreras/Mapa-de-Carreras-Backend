@@ -2,7 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from gestion_academica.models.M4_gestion_usuarios_autenticacion import Usuario
-from ..serializers.gestion_usuario_serializer.usuario_serializer import UsuarioSerializer
+from ..serializers.M4_gestion_usuarios_autenticacion import UsuarioSerializer
 
 class UsuarioViewSet(viewsets.ModelViewSet):
     """ ViewSet para crear (registrar), ver, actualizar y eliminar usuarios """

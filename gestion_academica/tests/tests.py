@@ -1,6 +1,3 @@
-# gestion_academica/tests/tests.py
-
-
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 from django.utils import timezone
@@ -287,4 +284,5 @@ class TestParametrosRegimenValidation(TestCase):
             horas_max_actual=12, horas_min_actual=6
         )
         with self.assertRaises(ValidationError):
+
             regimen_invalido.full_clean()

@@ -213,4 +213,5 @@ class SerializersIntegrationTests(TestCase):
         self.assertTrue(cc.activo)
         # CoordinadorSerializer read-only nested list present
         s_coord = CoordinadorSerializer(coord)
+
         self.assertIn('carreras_coordinadas', s_coord.data)

@@ -61,4 +61,5 @@ class DesignacionSerializer(serializers.ModelSerializer):
             "id", "fecha_inicio", "fecha_fin", "tipo_designacion",
             "docente", "comision", "regimen", "cargo",
             "observacion", "documento", "creado_por", "created_at", "updated_at"
+
         ]

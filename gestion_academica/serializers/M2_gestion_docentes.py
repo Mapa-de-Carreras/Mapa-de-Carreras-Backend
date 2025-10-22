@@ -42,7 +42,7 @@ class ParametrosRegimenSerializer(serializers.ModelSerializer):
             "id", "modalidad", "dedicacion",
             "modalidad_id", "dedicacion_id",
             "horas_max_frente_alumnos", "horas_min_frente_alumnos",
-            "horas_max_actual", "horas_min_actual",
+            "horas_max_actual", "horas_min_actual", "activo",
             "max_asignaturas"
         ]
 
@@ -84,44 +84,48 @@ class DocenteSerializer(serializers.ModelSerializer):
         model = models.Docente
         # hereda todos los campos de Usuario mas los suyos
         fields = [
-            "id", "legajo", "nombre", "apellido", "email", "celular",
+            "id", "username", "legajo", "first_name", "last_name", "email", "celular",
             "modalidad", "modalidad_id", "caracter", "caracter_id",
             "dedicacion", "dedicacion_id", "cantidad_materias",
             "password"
         ]
+
         read_only_fields = ["modalidad", "caracter", "dedicacion"]
 
     def create(self, validated_data):
         """
-        Creación mínima: maneja password seguro y cubre el caso en que
-        Docente.objects.create_user esté disponible o no.
+        Crea un nuevo Docente (que también es un Usuario) de forma segura.
         """
         password = validated_data.pop("password", None)
 
-        # create_user (heredado de UsuarioManager)
-        if hasattr(models.Docente.objects, "create_user"):
-            docente = models.Docente.objects.create_user(
-                **validated_data, password=password)
-        else:
-            # fallback: crear con create() y, si se dio password, setearlo
-            docente = models.Docente.objects.create(**validated_data)
-            if password:
-                docente.set_password(password)
-                docente.save()
+        # validated_data puede contener 'modalidad', 'caracter', 'dedicacion' (objetos)
+        docente = models.Docente.objects.create_user(
+            username=validated_data.get('username'),
+            password=password,
+            legajo=validated_data.get('legajo'),
+            first_name=validated_data.get('first_name'),
+            last_name=validated_data.get('last_name'),
+            email=validated_data.get('email'),
+            modalidad=validated_data.get('modalidad'),
+            caracter=validated_data.get('caracter'),
+            dedicacion=validated_data.get('dedicacion')
+        )
 
         return docente
 
     def update(self, instance, validated_data):
-        '''
-        Actualizar un Docente:
-        - Si llega password, se setea con set_password para que se almacene correctamente.
-        - Para el resto, se setean atributos y se guarda la instancia.
-        '''
+        """
+        Actualiza un Docente y maneja el cambio de contraseña de forma segura.
+        """
         password = validated_data.pop("password", None)
 
-        # simple update, setea campos y guarda
+        # Actualiza los campos heredados y propios
         for key, val in validated_data.items():
             setattr(instance, key, val)
-        instance.save()
 
+        # Si se proporcionó una nueva contraseña, la hashea y la guarda
+        if password:
+            instance.set_password(password)
+
+        instance.save()
         return instance

@@ -126,7 +126,7 @@ class ComisionTests(TestCase):
 class UsuarioRolesTests(TestCase):
     def setUp(self):
         self.usuario = Usuario.objects.create_user(
-            legajo="100", nombre="Juan", apellido="Pérez", email="jp@example.com", password="1234"
+            username="U100", legajo="100", first_name="Juan", last_name="Pérez", email="jp@example.com", password="1234"
         )
         self.rol_docente = Rol.objects.create(nombre="Docente")
 
@@ -140,7 +140,7 @@ class UsuarioRolesTests(TestCase):
 class NotificacionesTests(TestCase):
     def setUp(self):
         self.usuario = Usuario.objects.create_user(
-            legajo="200", nombre="Ana", apellido="Gomez", email="ana@example.com", password="1234"
+            username="U200", legajo="200", first_name="Ana", last_name="Gomez", email="ana@example.com", password="1234"
         )
         self.notificacion = Notificacion.objects.create(
             titulo="Prueba", mensaje="Mensaje de prueba", tipo="INFO", creado_por=self.usuario)
@@ -165,11 +165,11 @@ class DocenteCoordinadorTests(TestCase):
         self.carac = Caracter.objects.create(nombre="Regular")
         self.dedic = Dedicacion.objects.create(nombre="Simple")
         self.docente = Docente.objects.create_user(
-            legajo="300", nombre="Luis", apellido="Lopez", email="ll@example.com", password="1234",
+            username="DOC300", legajo="300", first_name="Luis", last_name="Lopez", email="ll@example.com", password="1234",
             modalidad=self.mod, caracter=self.carac, dedicacion=self.dedic
         )
         self.coord = Coordinador.objects.create_user(
-            legajo="400", nombre="Sofía", apellido="Torres", email="st@example.com", password="1234"
+            username="C400", legajo="400", first_name="Sofía", last_name="Torres", email="st@example.com", password="1234"
         )
         self.instituto = Instituto.objects.create(
             codigo="IDEI", nombre="Informática")
@@ -177,7 +177,7 @@ class DocenteCoordinadorTests(TestCase):
             codigo="INF-GRADO", nombre="Ing. Informática", nivel="GRADO", instituto=self.instituto)
 
     def test_docente_y_coordinador(self):
-        """Verifica que el __str__ de Docente y Coordinador use el formato 'Apellido, Nombre'."""
+        """Verifica que el __str__ de Docente y Coordinador use el formato 'Apellido Nombre'."""
         self.assertEqual(str(self.docente), "Lopez Luis")
         self.assertEqual(str(self.coord), "Torres Sofía")
 
@@ -202,7 +202,7 @@ class DesignacionTests(TestCase):
             horas_max_actual=12, horas_min_actual=6, max_asignaturas=2
         )
         self.docente = Docente.objects.create_user(
-            legajo="500", nombre="Carlos", apellido="Diaz", email="cd@example.com", password="1234",
+            username="D500", legajo="500", first_name="Carlos", last_name="Diaz", email="cd@example.com", password="1234",
             modalidad=self.modalidad, dedicacion=self.dedicacion
         )
         asig1 = Asignatura.objects.create(
@@ -230,13 +230,14 @@ class DesignacionTests(TestCase):
         # 1. Creamos la primera designación (válida, 1 de 2)
         Designacion.objects.create(
             docente=self.docente, comision=self.comision1, regimen=self.param,
-            cargo=self.cargo, fecha_inicio="2024-03-01"
+            cargo=self.cargo, fecha_inicio="2024-03-01", tipo_designacion="TEORICO",
         )
 
         # 2. Creamos la segunda designación (válida, 2 de 2)
         Designacion.objects.create(
             docente=self.docente, comision=self.comision2, regimen=self.param,
-            cargo=self.cargo, fecha_inicio="2024-08-01"
+            cargo=self.cargo, fecha_inicio="2024-08-01", tipo_designacion="TEORICO",
+
         )
 
         # 3. Creamos una tercera asignatura y comisión para el intento inválido
@@ -246,14 +247,11 @@ class DesignacionTests(TestCase):
             nombre="Com C", asignatura=asig3, turno="NOCHE")
 
         # 4. Intentamos crear la tercera designación (inválida, 3 de 2)
-        designacion_invalida = Designacion(
-            docente=self.docente, comision=comision3, regimen=self.param,
-            cargo=self.cargo, fecha_inicio="2025-03-01"
-        )
-
-        # 5. Verificamos que el método clean() lance el error esperado
         with self.assertRaises(ValidationError):
-            designacion_invalida.full_clean()
+            Designacion.objects.create(
+                docente=self.docente, comision=comision3, regimen=self.param,
+                cargo=self.cargo, fecha_inicio="2025-03-01", tipo_designacion="TEORICO",
+            )
 
 
 class TestParametrosRegimenValidation(TestCase):
@@ -286,3 +284,12 @@ class TestParametrosRegimenValidation(TestCase):
         with self.assertRaises(ValidationError):
 
             regimen_invalido.full_clean()
+
+
+class TestDocumentoModel(TestCase):
+    """Prueba el modelo Documento"""
+
+    def test_crear_documento(self):
+        doc = Documento.objects.create(
+            tipo="Res", emisor="CS", numero="001", anio=2024)
+        self.assertEqual(str(doc), "Res CS N°001/2024")

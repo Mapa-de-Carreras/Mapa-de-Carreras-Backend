@@ -57,11 +57,12 @@ class SerializersIntegrationTests(TestCase):
 
         # Usuario base
         self.usuario_payload = {
+            "username": "U100",
             "legajo": "U100",
-            "nombre": "User",
-            "apellido": "Test",
+            "first_name": "User",
+            "last_name": "Test",
             "email": "user.test@example.com",
-            "password": "pass1234"
+            "password": "Pass1234"
         }
 
     def test_instituto_carrera_serializers(self):
@@ -137,20 +138,21 @@ class SerializersIntegrationTests(TestCase):
 
         # Crear Docente vía serializer (con password). Se usa legajo distinct para evitar conflicto.
         docente_payload = {
+            "username": "DOC1",
             "legajo": "DOC1",
-            "nombre": "Doc",
-            "apellido": "One",
+            "first_name": "Doc",
+            "last_name": "One",
             "email": "doc.one@example.com",
             "modalidad_id": self.modalidad.id,
             "caracter_id": self.caracter.id,
             "dedicacion_id": self.dedicacion.id,
-            "password": "docpass"
+            "password": "Pass1234"
         }
         s_docente = DocenteSerializer(data=docente_payload)
         self.assertTrue(s_docente.is_valid(), s_docente.errors)
         docente = s_docente.save()
         # docente debe tener contraseña usable
-        self.assertTrue(docente.check_password("docpass"))
+        self.assertTrue(docente.check_password("Pass1234"))
         self.assertEqual(docente.modalidad.id, self.modalidad.id)
 
         # Update docente (partial)
@@ -170,7 +172,7 @@ class SerializersIntegrationTests(TestCase):
             nombre="Com A", turno="MATUTINO", asignatura=asig1)
         # crear docente con create_user fallback si es necesario
         docente = models.Docente.objects.create_user(
-            legajo="DOC2", nombre="Doc2", apellido="Apellido", email="doc2@example.com", password="p")
+            username="DOC2", legajo="DOC2", first_name="Doc2", last_name="Apellido", email="doc2@example.com", password="p")
         # designacion crea y valida límite en clean()
         d_payload = {
             "fecha_inicio": "2024-03-01",
@@ -188,7 +190,7 @@ class SerializersIntegrationTests(TestCase):
     def test_notificacion_and_carrera_coordinacion(self):
         # crear creador
         creador = models.Usuario.objects.create_user(
-            legajo="U200", nombre="Creador", apellido="X", email="c@example.com", password="p")
+            username="U200", legajo="U200", first_name="Creador", last_name="X", email="c@example.com", password="p")
         # Notificacion
         notif_payload = {"titulo": "T1", "mensaje": "Hola",
                          "tipo": "INFO", "creado_por_id": creador.id}
@@ -204,7 +206,7 @@ class SerializersIntegrationTests(TestCase):
 
         # CarreraCoordinacion + CoordinadorSerializer
         coord = models.Coordinador.objects.create_user(
-            legajo="COORD1", nombre="Coord", apellido="C", email="coord@example.com", password="p")
+            username="COORD1", legajo="COORD1", first_name="Coord", last_name="C", email="coord@example.com", password="p")
         cc_payload = {"carrera_id": self.carrera.id,
                       "coordinador_id": coord.id, "creado_por_id": creador.id}
         s_cc = CarreraCoordinacionSerializer(data=cc_payload)

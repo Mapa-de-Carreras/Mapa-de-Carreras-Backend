@@ -26,7 +26,8 @@ class UsuarioSerializer(serializers.ModelSerializer):
             'password': {'write_only': True, 'required': False},
             # No es obligatorio en la actualización
             'password2': {'write_only': True, 'required': False},
-            'fecha_nacimiento': {'required': True}
+            'fecha_nacimiento': {'required': False},
+            'celular': {'required': False}
         }
 
     def validate(self, data):
@@ -101,17 +102,25 @@ class UsuarioSerializer(serializers.ModelSerializer):
         # Extrae los datos de la contraseña
         validated_data.pop('old_password', None)
         validated_data.pop('password2', None)
+        # Extraer campos de forma segura y crear usuario
+        username = validated_data.get('username')
+        password = validated_data.get('password')
+        first_name = validated_data.get('first_name')
+        last_name = validated_data.get('last_name')
+        email = validated_data.get('email')
+        legajo = validated_data.get('legajo')
+        celular = validated_data.get('celular', '')
+        fecha_nacimiento = validated_data.get('fecha_nacimiento', None)
 
-        # Crea el usuario y asocia la dirección creada
         usuario = models.Usuario.objects.create_user(
-            username=validated_data['username'],
-            password=validated_data['password'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name'],
-            email=validated_data['email'],
-            legajo=validated_data['legajo'],
-            celular=validated_data['celular'],
-            fecha_nacimiento=validated_data.get('fecha_nacimiento', None),
+            username=username,
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            legajo=legajo,
+            celular=celular,
+            fecha_nacimiento=fecha_nacimiento,
         )
         return usuario
 
@@ -171,7 +180,7 @@ class LogoutSerializer(serializers.Serializer):
 class RolSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Rol
-        fields = ['id', 'nombre', 'description']
+        fields = ['id', 'nombre', 'descripcion']
 
 
 class RolUsuarioSerializer(serializers.ModelSerializer):
@@ -245,8 +254,9 @@ class CoordinadorSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Coordinador
         fields = [
-            'id', 'legajo', 'nombre', 'apellido', 'email', 'celular',
+            'id', 'legajo', 'username', 'first_name', 'last_name', 'email', 'celular',
             'carreras_coordinadas'
         ]
 
-        read_only_fields = ['legajo', 'nombre', 'apellido', 'email', 'celular']
+        read_only_fields = ['legajo', 'first_name',
+                            'last_name', 'email', 'celular']

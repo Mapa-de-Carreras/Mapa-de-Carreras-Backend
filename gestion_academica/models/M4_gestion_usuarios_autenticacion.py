@@ -13,6 +13,7 @@ from django.utils import timezone
 from django.utils.crypto import get_random_string
 from .M1_gestion_academica import Carrera
 
+
 class Usuario(AbstractUser):
     """Modelo base para todos los usuarios del sistema."""
     legajo = models.CharField(max_length=20, unique=True)
@@ -22,7 +23,7 @@ class Usuario(AbstractUser):
     # definicion de la relacion muchos a muchos a traves del modelo puente
     roles = models.ManyToManyField(
         "Rol", through="RolUsuario", related_name="usuarios")
-    
+
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=['email'], name='uq_email_unico')
@@ -47,7 +48,7 @@ class Usuario(AbstractUser):
         return self.is_superuser
 
     def __str__(self):
-        return f"{self.username}"
+        return f"{self.last_name} {self.first_name}"
 
 
 class Rol(models.Model):

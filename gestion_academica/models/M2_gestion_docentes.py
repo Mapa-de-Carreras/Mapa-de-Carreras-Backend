@@ -59,7 +59,7 @@ class Docente(Usuario):
     cantidad_materias = models.PositiveIntegerField(default=0)
 
     def __str__(self):
-        return f"{self.apellido} {self.nombre}"
+        return f"{self.last_name} {self.first_name}"
 
 
 class ParametrosRegimen(models.Model):
@@ -68,6 +68,7 @@ class ParametrosRegimen(models.Model):
         Modalidad, on_delete=models.CASCADE, related_name="parametros_regimen")
     dedicacion = models.ForeignKey(
         Dedicacion, on_delete=models.CASCADE, related_name="parametros_regimen")
+    activo = models.BooleanField(default=True)
 
     horas_max_frente_alumnos = models.PositiveIntegerField()
     horas_min_frente_alumnos = models.PositiveIntegerField()

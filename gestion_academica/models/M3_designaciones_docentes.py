@@ -78,6 +78,7 @@ class Designacion(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
+        blank=True,
         related_name='designaciones_creadas',
     )
 
@@ -92,6 +93,10 @@ class Designacion(models.Model):
 
     def __str__(self):
         return f"{self.docente} en {self.comision}"
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
     def clean(self):
         # Contamos las designaciones activas que ya tiene el docente

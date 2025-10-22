@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+from datetime import timedelta
 from pathlib import Path
 import os
 
@@ -44,7 +45,7 @@ INSTALLED_APPS = [
     # --- Apps de Terceros ---
     'rest_framework',
     'rest_framework_simplejwt',
-    'rest_framework_simplejwt.token_blacklist', # Para el Logout
+    'rest_framework_simplejwt.token_blacklist',  # Para el Logout
     'drf_yasg',                                 # Para Swagger
 ]
 
@@ -153,7 +154,6 @@ REST_FRAMEWORK = {
 }
 
 # --- Configuración de Simple JWT ---
-from datetime import timedelta
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),

@@ -5,7 +5,6 @@ from rest_framework import serializers
 from gestion_academica import models
 import re
 
-
 class UsuarioSerializer(serializers.ModelSerializer):
     password2 = serializers.CharField(write_only=True, required=False)  # password2 solo se necesita en la creación
     password = serializers.CharField(write_only=True, required=False)   # password es opcional en la actualización
@@ -97,7 +96,8 @@ class UsuarioSerializer(serializers.ModelSerializer):
             email=validated_data['email'],
             legajo=validated_data['legajo'],
             celular=validated_data['celular'],
-            fecha_nacimiento = validated_data.get('fecha_nacimiento', None),
+            fecha_nacimiento=validated_data.get('fecha_nacimiento', None),
+            is_active=False
         )
         return usuario
             
@@ -123,14 +123,6 @@ class UsuarioSerializer(serializers.ModelSerializer):
             instance.set_password(validated_data['password'])
             instance.save()
         return instance
-
-    def obtener_id(self, validated_data):
-        email = validated_data['email']
-        try:
-            usuario = models.Usuario.objects.get(email=email)
-            return {"id": usuario.id}
-        except models.Usuario.DoesNotExist:
-            raise serializers.ValidationError({"email": "No se encontró un usuario con este correo electrónico"})
         
 
 from django.contrib.auth import authenticate

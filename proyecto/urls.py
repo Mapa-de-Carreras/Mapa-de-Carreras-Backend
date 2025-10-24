@@ -1,10 +1,20 @@
 from django.contrib import admin
 from django.urls import path, include
+from rest_framework.permissions import AllowAny
 
 # --- Imports de Vistas ---
 from rest_framework.routers import DefaultRouter
-from gestion_academica.views.autenticacion_view import LoginView, LogoutView
-from gestion_academica.views.usuario_view import UsuarioViewSet
+
+from gestion_academica.views import (
+    UsuarioRegistroView,
+    SolicitarCodigoView,
+    ActivarCuentaView,
+    RestablecerContraseñaView,
+    RecuperarUsuarioView,
+    LoginView,
+    LogoutView,
+    UsuarioViewSet
+)
 
 # --- Imports de SimpleJWT ---
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -26,7 +36,7 @@ schema_view = get_schema_view(
 )
 
 # --- Configuración del ROUTER ---
-# Esto crea las rutas para tu UsuarioViewSet
+# Esto crea las rutas para los models
 router = DefaultRouter()
 router.register(r'api/usuarios', UsuarioViewSet, basename='usuario')
 
@@ -35,9 +45,18 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # --- Endpoints de Autenticación (Login/Logout/Refresh) ---
-    path('api/auth/login/', LoginView.as_view(), name='auth_login'),
-    path('api/auth/logout/', LogoutView.as_view(), name='auth_logout'),
-    path('api/auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'), # Usamos la de simplejwt
+    path('api/auth/login/', LoginView.as_view(), name='login'),
+    path('api/auth/logout/', LogoutView.as_view(), name='logout'),
+    path('api/auth/refresh/', TokenRefreshView.as_view(permission_classes=[AllowAny]), name='token_refresh'), # Usamos la de simplejwt
+
+    # --- Endpoints de flujo de Registro ---
+    path('api/auth/registrar-usuario/', UsuarioRegistroView.as_view(), name='registrar_usuario'),
+    path('api/auth/registrar/activar-cuenta/', ActivarCuentaView.as_view(), name='activar_cuenta'),
+
+    # --- Flujo de Recuperación de Cuenta ---
+    path('api/auth/recuperar/solicitar-codigo/', SolicitarCodigoView.as_view(), name='solicitar_codigo_verificacion'), 
+    path('api/auth/recuperar/restablecer-contraseña/', RestablecerContraseñaView.as_view(), name='restablecer_contraseña'),
+    path('api/auth/recuperar/recuperar-username/', RecuperarUsuarioView.as_view(), name='recuperar_username'),
 
     # --- Endpoints de Swagger ---
     path('docs/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

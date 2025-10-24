@@ -10,10 +10,18 @@ class UsuarioSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False)   # password es opcional en la actualización
     old_password = serializers.CharField(write_only=True, required=False)  # Para validar contraseña actual
 
+    roles = serializers.PrimaryKeyRelatedField(
+        queryset=models.Rol.objects.all(),
+        many=True,
+        write_only=True,
+        required=False  # Hacer True cuando ya estén cargados los roles y funcione el front
+    )
+
     class Meta:
         model = models.Usuario
         fields = [
-            'id', 'username', 'first_name', 'last_name', 'email', 'is_staff','password', 'old_password','password2', 'legajo', 'fecha_nacimiento', 'celular'
+            'id', 'username', 'first_name', 'last_name', 'email', 'is_staff','password',
+            'old_password','password2', 'legajo', 'fecha_nacimiento', 'celular', 'roles'
         ]
         extra_kwargs = {
             'password': {'write_only': True, 'required': False},  # No es obligatorio en la actualización
@@ -83,6 +91,9 @@ class UsuarioSerializer(serializers.ModelSerializer):
         return data
     
     def create(self, validated_data):
+        # Extrae los roles, o una lista vacía
+        roles_data = validated_data.pop('roles', [])
+
         # Extrae los datos de la contraseña
         validated_data.pop('old_password', None)
         validated_data.pop('password2', None)
@@ -99,6 +110,11 @@ class UsuarioSerializer(serializers.ModelSerializer):
             fecha_nacimiento=validated_data.get('fecha_nacimiento', None),
             is_active=False
         )
+
+        # Asigna los roles a través del modelo 'RolUsuario' (Source 2)
+        for rol in roles_data:
+            models.RolUsuario.objects.create(usuario=usuario, rol=rol)
+
         return usuario
             
     def update(self, instance, validated_data):
@@ -110,6 +126,11 @@ class UsuarioSerializer(serializers.ModelSerializer):
         validated_data.pop('old_password', None)
         validated_data.pop('password2', None)
         validated_data.pop('fecha_nacimiento', None)  # Asegura que no se actualice la fecha de nacimiento
+
+        # Manejar actualización de roles si lo deseas
+        if 'roles' in validated_data:
+            roles_data = validated_data.pop('roles')
+            instance.roles.set(roles_data)
         
         # Actualiza los campos restantes
         for attr, value in validated_data.items():

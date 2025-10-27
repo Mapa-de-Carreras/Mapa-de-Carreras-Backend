@@ -2,6 +2,7 @@
 
 from rest_framework import serializers
 from gestion_academica import models
+from gestion_academica.serializers.M3_designaciones_docentes import DesignacionSerializer
 
 
 class CaracterSerializer(serializers.ModelSerializer):
@@ -131,3 +132,32 @@ class DocenteSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
+
+
+class DocenteDetalleSerializer(serializers.ModelSerializer):
+    modalidad = serializers.StringRelatedField()
+    dedicacion = serializers.StringRelatedField()
+    caracter = serializers.StringRelatedField()
+
+    # Se traen las designaciones relacionadas
+    designaciones = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.Docente
+        fields = [
+            "id", "legajo", "username", "first_name", "last_name", "email",
+            "celular", "modalidad", "dedicacion", "caracter", "cantidad_materias",
+            "designaciones"
+        ]
+
+    def get_designaciones(self, obj):
+        """Devuelve designaciones actuales e históricas del docente."""
+        designaciones_qs = models.Designacion.objects.filter(docente=obj)
+
+        actuales = designaciones_qs.filter(fecha_fin__isnull=True)
+        historicas = designaciones_qs.filter(fecha_fin__isnull=False)
+
+        return {
+            "actuales": DesignacionSerializer(actuales, many=True).data,
+            "historicas": DesignacionSerializer(historicas, many=True).data
+        }

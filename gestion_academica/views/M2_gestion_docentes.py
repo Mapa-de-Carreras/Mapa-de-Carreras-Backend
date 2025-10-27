@@ -9,7 +9,7 @@ from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 
 from gestion_academica import models
-from gestion_academica.serializers.M2_gestion_docentes import DocenteSerializer
+from gestion_academica.serializers.M2_gestion_docentes import DocenteSerializer, DocenteDetalleSerializer
 
 
 class DocenteViewSet(viewsets.ModelViewSet):
@@ -24,6 +24,9 @@ class DocenteViewSet(viewsets.ModelViewSet):
             nombre__in=["Admin", "Coordinador"]).exists()
 
     def create(self, request, *args, **kwargs):
+        '''
+        Permite crear un docente
+        '''
         user = request.user
 
         # verificacion de permisos
@@ -101,6 +104,9 @@ class DocenteViewSet(viewsets.ModelViewSet):
         return Response(out_serializer.data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
+        '''
+        Permite actualizar un docente, solo campos permitidos
+        '''
         user = request.user
 
         # Verificación de permisos
@@ -132,4 +138,54 @@ class DocenteViewSet(viewsets.ModelViewSet):
 
         serializer.save()
 
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def destroy(self, request, *args, **kwargs):
+        '''
+        Permite deshabilitar un docente
+        '''
+        user = request.user
+
+        # verificacion de permisos
+        if not (user.is_superuser or self._user_can_manage_docentes(user)):
+            raise PermissionDenied(
+                "No tiene permisos para deshabilitar docentes.")
+
+        docente = self.get_object()
+
+        if not docente.is_active:
+            return Response(
+                {"detail": "El docente ya está deshabilitado."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # deshabilitacion
+        with transaction.atomic():
+            docente.is_active = False
+            docente.save()
+
+        return Response(
+            {"detail": f"El docente '{docente.username}' fue deshabilitado correctamente."},
+            status=status.HTTP_200_OK
+        )
+
+    def retrieve(self, request, *args, **kwargs):
+        '''
+        Permite visualizar el detalle completo de un docente
+        '''
+        user = request.user
+
+        if not (user.is_superuser or self._user_can_manage_docentes(user)):
+            raise PermissionDenied(
+                "No tiene permisos para visualizar docentes.")
+
+        docente = self.get_object()
+
+        if not docente.is_active:
+            return Response(
+                {"detail": "El docente está deshabilitado y no puede visualizarse."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer = DocenteDetalleSerializer(docente)
         return Response(serializer.data, status=status.HTTP_200_OK)

@@ -126,18 +126,8 @@ class DocenteSerializer(serializers.ModelSerializer):
         return docente
 
     def update(self, instance, validated_data):
-        """
-        Actualiza un Docente y maneja el cambio de contraseña de forma segura.
-        """
-        password = validated_data.pop("password", None)
-
-        # Actualiza los campos heredados y propios
-        for key, val in validated_data.items():
-            setattr(instance, key, val)
-
-        # Si se proporcionó una nueva contraseña, la hashea y la guarda
-        if password:
-            instance.set_password(password)
-
+        '''Actualiza solo los campos permitidos'''
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
         instance.save()
         return instance

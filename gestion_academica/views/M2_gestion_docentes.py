@@ -99,3 +99,37 @@ class DocenteViewSet(viewsets.ModelViewSet):
 
         out_serializer = self.get_serializer(instance)
         return Response(out_serializer.data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        user = request.user
+
+        # Verificación de permisos
+        if not user.is_authenticated:
+            raise PermissionDenied("Debe iniciar sesión para editar docentes.")
+        if not (user.is_superuser or self._user_can_manage_docentes(user)):
+            raise PermissionDenied("No tiene permisos para editar docentes.")
+
+        # Obtener el docente a editar
+        docente = self.get_object()
+
+        # Campos permitidos
+        allowed_fields = [
+            "legajo", "first_name", "last_name",
+            "email", "celular", "caracter_id", "modalidad_id"
+        ]
+
+        # Filtrar solo los campos válidos del request
+        data = {k: v for k, v in request.data.items() if k in allowed_fields}
+
+        if not data:
+            return Response(
+                {"detail": "No se enviaron campos válidos para actualizar."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = self.get_serializer(docente, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+
+        serializer.save()
+
+        return Response(serializer.data, status=status.HTTP_200_OK)

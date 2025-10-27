@@ -16,10 +16,19 @@ class UsuarioSerializer(serializers.ModelSerializer):
     old_password = serializers.CharField(
         write_only=True, required=False)  # Para validar contraseña actual
 
+    roles = serializers.PrimaryKeyRelatedField(
+        queryset=models.Rol.objects.all(),
+        many=True,
+        write_only=True,
+        required=False  # Hacer True cuando ya estén cargados los roles y funcione el front
+    )
+
     class Meta:
         model = models.Usuario
         fields = [
-            'id', 'username', 'first_name', 'last_name', 'email', 'is_staff', 'password', 'old_password', 'password2', 'legajo', 'fecha_nacimiento', 'celular'
+
+            'id', 'username', 'first_name', 'last_name', 'email', 'is_staff', 'password',
+            'old_password', 'password2', 'legajo', 'fecha_nacimiento', 'celular', 'roles'
         ]
         extra_kwargs = {
             # No es obligatorio en la actualización
@@ -99,6 +108,9 @@ class UsuarioSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
+        # Extrae los roles, o una lista vacía
+        roles_data = validated_data.pop('roles', [])
+
         # Extrae los datos de la contraseña
         validated_data.pop('old_password', None)
         validated_data.pop('password2', None)
@@ -113,15 +125,22 @@ class UsuarioSerializer(serializers.ModelSerializer):
         fecha_nacimiento = validated_data.get('fecha_nacimiento', None)
 
         usuario = models.Usuario.objects.create_user(
-            username=username,
-            password=password,
-            first_name=first_name,
-            last_name=last_name,
-            email=email,
-            legajo=legajo,
-            celular=celular,
-            fecha_nacimiento=fecha_nacimiento,
+
+            username=validated_data['username'],
+            password=validated_data['password'],
+            first_name=validated_data['first_name'],
+            last_name=validated_data['last_name'],
+            email=validated_data['email'],
+            legajo=validated_data['legajo'],
+            celular=validated_data['celular'],
+            fecha_nacimiento=validated_data.get('fecha_nacimiento', None),
+            is_active=False
         )
+
+        # Asigna los roles a través del modelo 'RolUsuario' (Source 2)
+        for rol in roles_data:
+            models.RolUsuario.objects.create(usuario=usuario, rol=rol)
+
         return usuario
 
     def update(self, instance, validated_data):
@@ -132,8 +151,14 @@ class UsuarioSerializer(serializers.ModelSerializer):
         # Remueve campos que no queremos actualizar
         validated_data.pop('old_password', None)
         validated_data.pop('password2', None)
+
         # Asegura que no se actualice la fecha de nacimiento
         validated_data.pop('fecha_nacimiento', None)
+
+        # Manejar actualización de roles si lo deseas
+        if 'roles' in validated_data:
+            roles_data = validated_data.pop('roles')
+            instance.roles.set(roles_data)
 
         # Actualiza los campos restantes
         for attr, value in validated_data.items():
@@ -147,15 +172,6 @@ class UsuarioSerializer(serializers.ModelSerializer):
             instance.set_password(validated_data['password'])
             instance.save()
         return instance
-
-    def obtener_id(self, validated_data):
-        email = validated_data['email']
-        try:
-            usuario = models.Usuario.objects.get(email=email)
-            return {"id": usuario.id}
-        except models.Usuario.DoesNotExist:
-            raise serializers.ValidationError(
-                {"email": "No se encontró un usuario con este correo electrónico"})
 
 
 class LoginSerializer(serializers.Serializer):

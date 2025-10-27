@@ -18,3 +18,6 @@ from .M2_gestion_docentes import (
 from .M3_designaciones_docentes import (
     DesignacionSerializer, ComisionSerializer, CargoSerializer
 )
+
+
+from .auth_serializers import ActivarCuentaSerializer, EnviarCodigoVerificacionSerializer, RecuperarUsuarioSerializer, RestablecerContraseñaSerializer

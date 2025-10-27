@@ -5,3 +5,4 @@ drf_yasg==1.21.8
 asgiref==3.9.2
 psycopg2-binary==2.9.10
 sqlparse==0.5.3
+python-dotenv==1.1.1

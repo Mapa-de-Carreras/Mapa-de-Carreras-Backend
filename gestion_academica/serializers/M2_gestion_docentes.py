@@ -98,14 +98,26 @@ class DocenteSerializer(serializers.ModelSerializer):
         """
         password = validated_data.pop("password", None)
 
-        # validated_data puede contener 'modalidad', 'caracter', 'dedicacion' (objetos)
+        # validar campos mínimos
+        if not validated_data.get('username') or not password:
+            raise serializers.ValidationError(
+                {"detail": "username y password son requeridos para crear docente."})
+
+        # aseguramos valores no-None para campos string
+        first_name = validated_data.get('first_name') or ""
+        last_name = validated_data.get('last_name') or ""
+        email = validated_data.get('email') or ""
+        legajo = validated_data.get('legajo') or ""
+        celular = validated_data.get("celular") or ""
+
         docente = models.Docente.objects.create_user(
             username=validated_data.get('username'),
             password=password,
-            legajo=validated_data.get('legajo'),
-            first_name=validated_data.get('first_name'),
-            last_name=validated_data.get('last_name'),
-            email=validated_data.get('email'),
+            legajo=legajo,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            celular=celular,
             modalidad=validated_data.get('modalidad'),
             caracter=validated_data.get('caracter'),
             dedicacion=validated_data.get('dedicacion')

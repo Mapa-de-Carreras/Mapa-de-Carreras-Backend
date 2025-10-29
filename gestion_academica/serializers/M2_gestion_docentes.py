@@ -77,9 +77,9 @@ class DocenteSerializer(serializers.ModelSerializer):
     )
 
     # representaciones en lectura (simple PKs)
-    modalidad = serializers.PrimaryKeyRelatedField(read_only=True)
-    caracter = serializers.PrimaryKeyRelatedField(read_only=True)
-    dedicacion = serializers.PrimaryKeyRelatedField(read_only=True)
+    modalidad = ModalidadSerializer(read_only=True)
+    caracter = CaracterSerializer(read_only=True)
+    dedicacion = DedicacionSerializer(read_only=True)
 
     class Meta:
         model = models.Docente

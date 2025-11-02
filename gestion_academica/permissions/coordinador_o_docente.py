@@ -1,4 +1,5 @@
 from rest_framework import permissions
+from django.db.models import Q
 
 class IsCoordinadorOrDocente(permissions.BasePermission):
     """
@@ -14,4 +15,6 @@ class IsCoordinadorOrDocente(permissions.BasePermission):
         
         # Verificamos si el usuario tiene alguno de los roles requeridos.
         # Esto usa el campo 'roles' que definimos en el modelo Usuario.
-        return request.user.roles.filter(nombre__in=["Coordinador", "Docente"]).exists()
+        return request.user.roles.filter(
+            Q(nombre__iexact="Coordinador") | Q(nombre__iexact="Docente")
+        ).exists()

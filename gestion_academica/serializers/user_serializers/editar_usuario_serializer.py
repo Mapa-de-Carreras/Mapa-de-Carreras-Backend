@@ -11,12 +11,9 @@ class EditarUsuarioSerializer(BaseUsuarioSerializer):
         # El usuario normal solo puede editar este subconjunto
         fields = [
             'first_name', 'last_name', 'username', 'email', 'celular', 'fecha_nacimiento',
-            'old_password', 'password', 'password2'
         ]
         extra_kwargs = {
             'fecha_nacimiento': {'required': False},
-            'password': {'required': False},
-            'password2': {'required': False},
         }
 
     # No necesita 'validate' ni 'update', los hereda de BaseUsuarioSerializer.

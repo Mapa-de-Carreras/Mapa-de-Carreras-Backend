@@ -1,7 +1,6 @@
 from datetime import date
 from rest_framework import serializers
 from gestion_academica import models
-import re
 
 # --- 1. CREAMOS LA CLASE DE USUARIO BASE CON LA LÓGICA REUTILIZABLE ---
 
@@ -10,10 +9,6 @@ class BaseUsuarioSerializer(serializers.ModelSerializer):
     Serializer base que contiene la lógica compartida de validación
     y actualización para todos los serializers de Usuario.
     """
-    # Definimos los campos de contraseña aquí para que ambos herederos los tengan
-    old_password = serializers.CharField(write_only=True, required=False)
-    password = serializers.CharField(write_only=True, required=False)
-    password2 = serializers.CharField(write_only=True, required=False)
 
     def validate(self, data):
         """ Validaciones """
@@ -32,29 +27,8 @@ class BaseUsuarioSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({
                     "fecha_nacimiento": "Debes tener al menos 18 años."
                 })
-        
-        # 2. Validación de contraseña (si se intenta cambiar)
-        if 'password' in data and data['password']:
-            password = data['password']
-            if len(password) < 8:
-                raise serializers.ValidationError({"password": "La contraseña debe tener al menos 8 caracteres."})
-            if not re.search(r'[A-Z]', password):
-                raise serializers.ValidationError({"password": "La contraseña debe contener al menos una letra mayúscula."})
-            if not re.search(r'[0-9]', password):
-                raise serializers.ValidationError({"password": "La contraseña debe contener al menos un número."})
-            
-            # 2a. Validar contraseña actual (solo en actualizaciones)
-            if instance: # Si es un update (no un create)
-                if not 'old_password' in data:
-                    raise serializers.ValidationError({"old_password": "Debe proporcionar la contraseña actual."})
-                if not instance.check_password(data['old_password']):
-                    raise serializers.ValidationError({"old_password": "La contraseña actual es incorrecta."})
-            
-            # 2b. Validar que las nuevas coincidan
-            if 'password2' not in data or data['password'] != data['password2']:
-                raise serializers.ValidationError({"password": "Las nuevas contraseñas no coinciden."})
 
-        # 3. Validaciones de unicidad (Que exista solo 1) (Email, Username, Celular)
+        # 2. Validaciones de unicidad (Que exista solo 1) (Email, Username, Celular)
         email = data.get('email', None)
         username = data.get('username', None)
         celular = data.get('celular', None)
@@ -74,15 +48,8 @@ class BaseUsuarioSerializer(serializers.ModelSerializer):
     
     def update(self, instance, validated_data):
         """
-        Maneja la actualización de contraseña y otros campos.
+        Maneja la actualización de datos.
         """
-        # Maneja la actualización de contraseña si está presente
-        if 'password' in validated_data:
-            instance.set_password(validated_data.pop('password'))
-
-        # Remueve campos de contraseña que no van en el modelo
-        validated_data.pop('old_password', None)
-        validated_data.pop('password2', None)
         
         # Actualiza los campos restantes (first_name, email, etc.)
         for attr, value in validated_data.items():

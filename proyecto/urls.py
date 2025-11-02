@@ -13,7 +13,8 @@ from gestion_academica.views import (
     RecuperarUsuarioView,
     LoginView,
     LogoutView,
-    UsuarioViewSet
+    UsuarioViewSet,
+    EditarUsuarioView,
 )
 
 # --- Imports de SimpleJWT ---
@@ -64,5 +65,6 @@ urlpatterns = [
 
     # --- Endpoints de Gestión de Usuarios (CRUD y Registro) ---
     # Esto incluye /api/usuarios/ (POST para registro, GET para lista)
+    path('api/editar-usuario/', EditarUsuarioView.as_view(), name='editar_usuario'),
     path('', include(router.urls)),
 ]

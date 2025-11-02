@@ -1,0 +1,1 @@
+from .coordinador_o_docente import IsCoordinadorOrDocente

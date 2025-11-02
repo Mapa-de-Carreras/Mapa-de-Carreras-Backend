@@ -13,7 +13,9 @@ from gestion_academica.views import (
     RecuperarUsuarioView,
     LoginView,
     LogoutView,
-    UsuarioViewSet
+    UsuarioViewSet,
+    EditarUsuarioView,
+    CambiarContrasenaView,
 )
 
 # --- Imports de SimpleJWT ---
@@ -27,7 +29,7 @@ from drf_yasg import openapi
 # --- Configuración de SWAGGER ---
 schema_view = get_schema_view(
    openapi.Info(
-      title="API de Mapa de Carreras", # Puedes cambiar este título
+      title="API de Mapa de Carreras",
       default_version='v1',
       description="Documentación de la API para el proyecto",
    ),
@@ -64,5 +66,7 @@ urlpatterns = [
 
     # --- Endpoints de Gestión de Usuarios (CRUD y Registro) ---
     # Esto incluye /api/usuarios/ (POST para registro, GET para lista)
+    path('api/editar-usuario/', EditarUsuarioView.as_view(), name='editar_usuario'),
+    path('api/cambiar-contraseña/', CambiarContrasenaView.as_view(), name='cambiar_contraseña'),
     path('', include(router.urls)),
 ]

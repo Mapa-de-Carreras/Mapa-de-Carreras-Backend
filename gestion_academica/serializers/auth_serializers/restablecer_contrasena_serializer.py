@@ -1,7 +1,7 @@
-import re
 from rest_framework import serializers
 from gestion_academica import models
 from django.core.cache import cache
+from ..validators import validar_nueva_contraseña
 
 class RestablecerContraseñaSerializer(serializers.Serializer):
     """
@@ -15,8 +15,6 @@ class RestablecerContraseñaSerializer(serializers.Serializer):
     def validate(self, data):
         email = data.get('email')
         code = data.get('code')
-        password = data.get('password')
-        password2 = data.get('password2')
 
         # 1. Validar el usuario
         try:
@@ -37,16 +35,7 @@ class RestablecerContraseñaSerializer(serializers.Serializer):
             raise serializers.ValidationError({"code": "Código incorrecto."})
 
         # 3. Validar contraseñas
-        if password != password2:
-            raise serializers.ValidationError({"password": "Las contraseñas no coinciden."})
-
-        # 4. Validar complejidad de la contraseña
-        if len(password) < 8:
-            raise serializers.ValidationError({"password": "La contraseña debe tener al menos 8 caracteres."})
-        if not re.search(r'[A-Z]', password):
-            raise serializers.ValidationError({"password": "La contraseña debe contener al menos una letra mayúscula."})
-        if not re.search(r'[0-9]', password):
-            raise serializers.ValidationError({"password": "La contraseña debe contener al menos un número."})
+        validar_nueva_contraseña(data['password'], data['password2'])
         
         # Si todo está bien, limpiamos el código de la caché
         cache.delete(cache_key)

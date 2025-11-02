@@ -1,5 +1,4 @@
-from rest_framework import viewsets, status, mixins
-from rest_framework.response import Response
+from rest_framework import viewsets, mixins
 # Ahora el permiso por defecto debe ser más estricto
 from rest_framework.permissions import IsAdminUser 
 from gestion_academica.models.M4_gestion_usuarios_autenticacion import Usuario

@@ -3,15 +3,36 @@ from gestion_academica import models
 from .base_usuario_serializer import BaseUsuarioSerializer
 from ..validators import validar_nueva_contraseña
 
+class CaseInsensitiveSlugRelatedField(serializers.SlugRelatedField):
+    """
+    Un SlugRelatedField que no distingue mayúsculas de minúsculas
+    al buscar el 'slug' de rol en la base de datos.
+    """
+    def to_internal_value(self, data):
+        # Sobrescribimos este método para usar una búsqueda
+        # insensible a mayúsculas (__iexact)
+        try:
+            return self.get_queryset().get(**{
+                f"{self.slug_field}__iexact": data
+            })
+        except (TypeError, ValueError):
+            self.fail('invalid')
+        except self.get_queryset().model.DoesNotExist:
+            # Mensaje de error si no lo encuentra
+            self.fail('does_not_exist', slug_name=self.slug_field, value=data)
+        except self.get_queryset().model.MultipleObjectsReturned:
+            # Mensaje de error si hay duplicados (ej: "rol" y "Rol")
+            self.fail('multiple_objects')
+
 class UsuarioSerializer(BaseUsuarioSerializer):
     """
     Serializer para el ADMIN. Puede ver y editar todos los campos
     y también crear usuarios.
     """
-    roles = serializers.PrimaryKeyRelatedField(
+    roles = CaseInsensitiveSlugRelatedField(
+        slug_field='nombre',  # Busca el rol por su campo 'nombre'
         queryset=models.Rol.objects.all(),
         many=True,
-        write_only=True,
         required=False
     )
     password = serializers.CharField(
@@ -71,3 +92,22 @@ class UsuarioSerializer(BaseUsuarioSerializer):
             models.RolUsuario.objects.create(usuario=usuario, rol=rol)
             
         return usuario
+    
+    def update(self, instance, validated_data):
+        """
+        Maneja la actualización de roles (para Admin)
+        y llama al 'update' de la base para los otros campos.
+        """
+        # 1. Extrae los roles antes de llamar al 'update' padre
+        roles_data = validated_data.pop('roles', None)
+
+        # 2. Llama al 'update' de BaseUsuarioSerializer
+        #    para manejar todos los otros campos (email, nombre, etc.)
+        instance = super().update(instance, validated_data)
+
+        # 3. Si se enviaron roles, actualízalos
+        if roles_data is not None:
+            # .set() es la forma de Django de manejar ManyToMany
+            instance.roles.set(roles_data)
+        
+        return instance

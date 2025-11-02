@@ -2,7 +2,7 @@ from rest_framework import generics
 from ..permissions import IsCoordinadorOrDocente
 from rest_framework.permissions import IsAuthenticated
 from gestion_academica.models import Usuario
-from ..serializers.user_serializers import EditarUsuarioSerializer
+from ..serializers.user_serializers import EditarUsuarioSerializer, UsuarioSerializer
 
 class EditarUsuarioView(generics.RetrieveUpdateAPIView):
     """
@@ -12,7 +12,6 @@ class EditarUsuarioView(generics.RetrieveUpdateAPIView):
     - PATCH: Permite solo a Coordinador/Docente editar su perfil.
     """
     queryset = Usuario.objects.all()
-    serializer_class = EditarUsuarioSerializer
 
     def get_permissions(self):
         """
@@ -33,3 +32,14 @@ class EditarUsuarioView(generics.RetrieveUpdateAPIView):
         Esto es lo que impide que un usuario edite a otro.
         """
         return self.request.user
+    
+    def get_serializer_class(self):
+        """
+        Devuelve un serializer diferente para GET y PATCH.
+        """
+        if self.request.method == 'PATCH':
+            # Para EDITAR (PATCH), usa el serializer limitado
+            return EditarUsuarioSerializer
+        
+        # Para LEER (GET), usa el serializer completo (que muestra roles, etc.)
+        return UsuarioSerializer

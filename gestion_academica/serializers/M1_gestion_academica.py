@@ -43,29 +43,54 @@ class CarreraSerializer(serializers.ModelSerializer):
 class CarreraCreateUpdateSerializer(serializers.ModelSerializer):
     instituto_id = serializers.PrimaryKeyRelatedField(
         source="instituto",
-        queryset=models.Instituto.objects.all(),
-        write_only=True
+        queryset=models.Instituto.objects.filter(activo=True),
+        write_only=True,
+        error_messages={
+            "does_not_exist": "El instituto seleccionado no existe o no está activo.",
+            "incorrect_type": "El valor de instituto_id debe ser un número entero válido."
+        }
     )
 
     class Meta:
         model = models.Carrera
         fields = ["codigo", "nombre", "nivel", "esta_vigente", "instituto_id"]
-        read_only_fields = ['id', 'created_at', 'updated_at',"esta_vigente"]
-    
+        read_only_fields = ["esta_vigente"]
+
+    # -------------------------------
+    # Validaciones generales
+    # -------------------------------
     def validate(self, data):
-        if 'esta_vigente' not in data:
-            data['esta_vigente'] = True
+        # Si no se indica, se asume que la carrera es vigente
+        if "esta_vigente" not in data:
+            data["esta_vigente"] = True
         return data
-    
+
+    # -------------------------------
+    # Validación: código único (no sensible a mayúsculas)
+    # -------------------------------
     def validate_codigo(self, value):
-        if models.Carrera.objects.filter(codigo=value).exclude(id=self.instance.id if self.instance else None).exists():
-            raise serializers.ValidationError("Ya existe una carrera con este código.")
+        value = value.strip().upper()
+        qs = models.Carrera.objects.filter(codigo__iexact=value)
+        if self.instance:
+            qs = qs.exclude(id=self.instance.id)
+        if qs.exists():
+            raise serializers.ValidationError("Ya existe una carrera con este código (no se distingue mayúsculas).")
+        return value
+
+    # -------------------------------
+    # Validación: nombre único (no sensible a mayúsculas ni espacios)
+    # -------------------------------
+    def validate_nombre(self, value):
+        nombre_normalizado = " ".join(value.strip().split()).upper()  # elimina espacios dobles y pasa a mayúsculas
+        qs = models.Carrera.objects.filter(nombre__iexact=nombre_normalizado)
+        if self.instance:
+            qs = qs.exclude(id=self.instance.id)
+        if qs.exists():
+            raise serializers.ValidationError("Ya existe una carrera con este nombre (no se distingue mayúsculas o espacios).")
         return value
     
-    def validate_nombre(self, value):
-        if not value.strip():
-            raise serializers.ValidationError("El nombre de la carrera no puede estar vacío.")
-        return value
+    
+ 
     
 
 class ResolucionSerializer(serializers.ModelSerializer):

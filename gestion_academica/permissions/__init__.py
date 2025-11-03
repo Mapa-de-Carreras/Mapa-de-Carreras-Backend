@@ -1,3 +1,3 @@
 from .admin_permissions import EsAdministrador
-from .coordinador_permissions import EsCoordinador, EsCoordinadorDeCarrera
+from .coordinador_permissions import EsCoordinadorDeCarrera
 from .docente_permissions import EsDocente

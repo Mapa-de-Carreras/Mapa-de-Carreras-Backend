@@ -2,7 +2,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from gestion_academica.serializers.M1_gestion_academica import InstitutoSerializer
-from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.permissions import AllowAny
+from gestion_academica.permissions import EsAdministrador, EsCoordinadorDeCarrera
 from gestion_academica.services.gestion_academica import institutos as instituto_service
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -12,7 +13,7 @@ class InstitutoListCreateView(APIView):
 
     def get_permissions(self):
         if self.request.method == 'POST':
-            return [IsAdminUser()]
+            return [EsAdministrador()]
         return [AllowAny()]
 
     # ------------------------------
@@ -67,7 +68,7 @@ class InstitutoDetailView(APIView):
 
     def get_permissions(self):
         if self.request.method in ['PUT', 'DELETE']:
-            return [IsAdminUser()]
+            return [EsAdministrador()]
         return [AllowAny()]
 
     # ------------------------------

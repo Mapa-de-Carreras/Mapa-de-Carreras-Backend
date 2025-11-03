@@ -1,7 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.permissions import AllowAny
+from gestion_academica.permissions import EsAdministrador, EsCoordinadorDeCarrera
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
@@ -9,12 +10,13 @@ from gestion_academica.serializers.M1_gestion_academica import CarreraSerializer
 from gestion_academica.services.gestion_academica import carreras as carrera_service
 
 
+
 class CarreraListCreateView(APIView):
     """Listar o crear Carreras"""
 
     def get_permissions(self):
         if self.request.method == 'POST':
-            return [IsAdminUser()]
+            return [EsAdministrador()]
         return [AllowAny()]
 
     # Definimos los parámetros de filtro para Swagger
@@ -106,8 +108,8 @@ class CarreraDetailView(APIView):
     """Obtener, actualizar o eliminar una Carrera"""
 
     def get_permissions(self):
-        if self.request.method in ['PUT', 'DELETE']:
-            return [IsAdminUser()]
+        if self.request.method in ['PUT', 'PATCH', 'DELETE']:
+            return [(EsAdministrador | EsCoordinadorDeCarrera)()]
         return [AllowAny()]
 
     # ------------------------------
@@ -134,7 +136,7 @@ class CarreraDetailView(APIView):
         tags=["Gestión Académica - Carreras"],
         security=[{'Bearer': []}],
         operation_summary="Actualizar una Carrera",
-        operation_description="Permite al administrador actualizar los datos de una carrera existente.",
+        operation_description="Permite al administrador o al coordinador (activo de la carrera correspondiente) actualizar los datos de una carrera existente.",
         request_body=CarreraCreateUpdateSerializer,
         responses={
             200: openapi.Response("Carrera actualizada correctamente", CarreraSerializer),
@@ -143,6 +145,9 @@ class CarreraDetailView(APIView):
     )
     def put(self, request, pk):
         carrera = carrera_service.obtener_carrera(pk)
+        
+        self.check_object_permissions(request, carrera)
+        
         serializer = CarreraCreateUpdateSerializer(carrera, data=request.data, partial=True)
         if serializer.is_valid():
             carrera_actualizada = carrera_service.actualizar_carrera(pk, serializer.validated_data)
@@ -166,6 +171,8 @@ class CarreraDetailView(APIView):
         responses={200: "Carrera eliminada correctamente"}
     )
     def delete(self, request, pk):
+        carrera = carrera_service.obtener_carrera(pk)
+        self.check_object_permissions(request, carrera)
         carrera_service.eliminar_carrera(pk)
         return Response({
             "message": "Carrera eliminada correctamente (marcada como no vigente)."

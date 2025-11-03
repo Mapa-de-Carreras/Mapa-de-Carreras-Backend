@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path,include
 from gestion_academica.views import (
     UsuarioRegistroView,
     SolicitarCodigoView,
@@ -7,12 +7,19 @@ from gestion_academica.views import (
     RecuperarUsuarioView,
     LoginView,
     LogoutView,
+    EditarUsuarioView,
+    CambiarContrasenaView,
+    UsuarioViewSet
 )
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework.permissions import AllowAny
+from rest_framework.routers import DefaultRouter
+
+router = DefaultRouter()
+router.register(r'usuarios', UsuarioViewSet, basename='usuario')
 
 urlpatterns = [
-
+    path('', include(router.urls)),
     # --- Endpoints de Autenticación (Login/Logout/Refresh) ---
     path('auth/login/', LoginView.as_view(), name='login'),
     path('auth/logout/', LogoutView.as_view(), name='logout'),
@@ -26,5 +33,7 @@ urlpatterns = [
     path('auth/recuperar/solicitar-codigo/', SolicitarCodigoView.as_view(), name='solicitar_codigo_verificacion'), 
     path('auth/recuperar/restablecer-contraseña/', RestablecerContraseñaView.as_view(), name='restablecer_contraseña'),
     path('auth/recuperar/recuperar-username/', RecuperarUsuarioView.as_view(), name='recuperar_username'),
+    path('auth/editar-usuario/', EditarUsuarioView.as_view(), name='editar_usuario'),
+    path('auth/cambiar-contraseña/', CambiarContrasenaView.as_view(), name='cambiar_contraseña'),
 
 ]

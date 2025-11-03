@@ -7,7 +7,7 @@ from django.shortcuts import redirect
 
 schema_view = get_schema_view(
    openapi.Info(
-      title="API Mapa de Carreras",
+      title="API de Mapa de Carreras",
       default_version='v1',
       description="Documentación general de la API",
    ),

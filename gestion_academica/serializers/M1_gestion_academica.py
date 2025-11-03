@@ -38,7 +38,12 @@ class CarreraSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 
-
+class CarreraVigenciaUpdateSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = models.Carrera
+        fields = ["esta_vigente"]
+        
 
 class CarreraCreateUpdateSerializer(serializers.ModelSerializer):
     instituto_id = serializers.PrimaryKeyRelatedField(
@@ -53,7 +58,7 @@ class CarreraCreateUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Carrera
-        fields = ["codigo", "nombre", "nivel", "esta_vigente", "instituto_id"]
+        fields = ["codigo", "nombre", "nivel", "instituto_id"]
         read_only_fields = ["esta_vigente"]
 
     # -------------------------------

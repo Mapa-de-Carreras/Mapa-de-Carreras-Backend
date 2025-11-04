@@ -171,49 +171,87 @@ class PlanAsignaturaSerializer(serializers.ModelSerializer):
         ]
 
 
+# class PlanDeEstudioSerializer(serializers.ModelSerializer):
+#     # referencias a Resolucion, Carrera y Documento
+#     resolucion = ResolucionSerializer(read_only=True)
+#     resolucion_id = serializers.PrimaryKeyRelatedField(
+#         source="resolucion",
+#         queryset=models.Resolucion.objects.all(),
+#         write_only=True
+#     )
+
+#     carrera = CarreraSerializer(read_only=True)
+#     carrera_id = serializers.PrimaryKeyRelatedField(
+#         source="carrera",
+#         queryset=models.Carrera.objects.all(),
+#         write_only=True,
+#         required=False,
+#         allow_null=True
+#     )
+
+#     documento = DocumentoSerializer(read_only=True)
+#     documento_id = serializers.PrimaryKeyRelatedField(
+#         source="documento",
+#         queryset=models.Documento.objects.all(),
+#         write_only=True,
+#         required=False,
+#         allow_null=True
+#     )
+
+#     # mostramos las asignaturas del plan a través del through (PlanAsignatura)
+#     asignaturas = PlanAsignaturaSerializer(
+#         source="planasignatura_set", many=True, read_only=True
+#     )
+
+#     class Meta:
+#         model = models.PlanDeEstudio
+#         fields = [
+#             "id", "fecha_inicio", "esta_vigente",
+#             "documento", "documento_id",
+#             "resolucion", "resolucion_id",
+#             "carrera", "carrera_id",
+#             "asignaturas", "creado_por",
+#             "created_at", "updated_at"
+#         ]
+#         read_only_fields = ["asignaturas"]
+
 class PlanDeEstudioSerializer(serializers.ModelSerializer):
-    # referencias a Resolucion, Carrera y Documento
-    resolucion = ResolucionSerializer(read_only=True)
-    resolucion_id = serializers.PrimaryKeyRelatedField(
-        source="resolucion",
-        queryset=models.Resolucion.objects.all(),
-        write_only=True
-    )
-
     carrera = CarreraSerializer(read_only=True)
-    carrera_id = serializers.PrimaryKeyRelatedField(
-        source="carrera",
-        queryset=models.Carrera.objects.all(),
-        write_only=True,
-        required=False,
-        allow_null=True
-    )
-
-    documento = DocumentoSerializer(read_only=True)
-    documento_id = serializers.PrimaryKeyRelatedField(
-        source="documento",
-        queryset=models.Documento.objects.all(),
-        write_only=True,
-        required=False,
-        allow_null=True
-    )
-
-    # mostramos las asignaturas del plan a través del through (PlanAsignatura)
-    asignaturas = PlanAsignaturaSerializer(
-        source="planasignatura_set", many=True, read_only=True
-    )
+    resolucion = serializers.StringRelatedField(read_only=True)
+    documento = serializers.StringRelatedField(read_only=True)
+    asignaturas = AsignaturaSerializer(read_only=True, many=True)
 
     class Meta:
         model = models.PlanDeEstudio
         fields = [
-            "id", "fecha_inicio", "esta_vigente",
-            "documento", "documento_id",
-            "resolucion", "resolucion_id",
-            "carrera", "carrera_id",
-            "asignaturas", "creado_por",
+            "id", "fecha_inicio", "esta_vigente", "carrera",
+            "resolucion", "documento", "asignaturas",
             "created_at", "updated_at"
         ]
-        read_only_fields = ["asignaturas"]
+
+
+class PlanDeEstudioCreateUpdateSerializer(serializers.ModelSerializer):
+    carrera_id = serializers.PrimaryKeyRelatedField(
+        source="carrera", queryset=models.Carrera.objects.all(), write_only=True
+    )
+    resolucion_id = serializers.PrimaryKeyRelatedField(
+        source="resolucion", queryset=models.Resolucion.objects.all(), write_only=True
+    )
+    documento_id = serializers.PrimaryKeyRelatedField(
+        source="documento", queryset=models.Documento.objects.all(),
+        required=False, allow_null=True, write_only=True
+    )
+
+    class Meta:
+        model = models.PlanDeEstudio
+        fields = ["fecha_inicio", "esta_vigente", "carrera_id", "resolucion_id", "documento_id"]
+
+    def validate(self, data):
+        carrera = data.get("carrera")
+        resolucion = data.get("resolucion")
+        if models.PlanDeEstudio.objects.filter(carrera=carrera, resolucion=resolucion).exists():
+            raise serializers.ValidationError("Ya existe un plan de estudios con esta resolución para la carrera.")
+        return data
 
 
 class CorrelativaSerializer(serializers.ModelSerializer):

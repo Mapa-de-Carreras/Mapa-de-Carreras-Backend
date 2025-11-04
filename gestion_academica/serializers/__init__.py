@@ -1,3 +1,5 @@
+# gestion_academica/serializers/__init__.py
+
 from .M1_gestion_academica import (
     InstitutoSerializer, CarreraSerializer, AsignaturaSerializer,
     DocumentoSerializer, PlanAsignaturaSerializer, PlanDeEstudioSerializer,

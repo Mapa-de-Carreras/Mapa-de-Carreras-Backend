@@ -2,5 +2,6 @@
 from django.urls import include, path
 
 urlpatterns = [
-    path("", include("gestion_academica.urls.M2_gestion_docentes"))
+    path("", include("gestion_academica.urls.M2_gestion_docentes")),
+    path("", include("gestion_academica.urls.M3_designaciones_docentes"))
 ]

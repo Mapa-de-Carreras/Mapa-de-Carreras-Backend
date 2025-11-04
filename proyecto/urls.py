@@ -76,6 +76,7 @@ urlpatterns = [
     # Esto incluye /api/usuarios/ (POST para registro, GET para lista)
     path('', include(router.urls)),
 
-    # --- Endopoints de Gestion de Docentes
+    # --- Endpoints de Gestion de Docentes, designaciones docentes
     path("api/", include("gestion_academica.urls"))
+
 ]

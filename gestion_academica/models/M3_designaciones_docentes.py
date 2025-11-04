@@ -64,8 +64,17 @@ class Designacion(models.Model):
         "gestion_academica.Docente", on_delete=models.CASCADE, related_name="designaciones")
     comision = models.ForeignKey(
         Comision, on_delete=models.PROTECT, related_name="designaciones")
-    regimen = models.ForeignKey(
-        "gestion_academica.ParametrosRegimen", on_delete=models.PROTECT, related_name="designaciones")
+
+    dedicacion = models.ForeignKey("gestion_academica.Dedicacion",
+                                   on_delete=models.PROTECT, null=True, blank=True, related_name="designaciones")
+
+    modalidad = models.ForeignKey(
+        "gestion_academica.Modalidad", on_delete=models.PROTECT, null=True, blank=True, related_name="designaciones"
+    )
+
+    regimen = models.ForeignKey("gestion_academica.ParametrosRegimen",
+                                on_delete=models.PROTECT, null=True, blank=True, related_name="designaciones")
+
     cargo = models.ForeignKey(
         Cargo, on_delete=models.PROTECT, null=False, related_name="designaciones")
 
@@ -99,17 +108,17 @@ class Designacion(models.Model):
         super().save(*args, **kwargs)
 
     def clean(self):
-        # Contamos las designaciones activas que ya tiene el docente
-        # Excluimos la designación actual si ya existe (para casos de edición)
+        return None
+
+    def excede_maximo(self):
+        """
+        Retorna True si las designaciones activas del docente
+        igualan o superan el max permitidas por el regimen.
+        """
+        regimen = getattr(self, "regimen", None)
+        if not regimen:
+            return False
         designaciones_actuales = Designacion.objects.filter(
             docente=self.docente, fecha_fin__isnull=True
         ).exclude(pk=self.pk)
-
-        # Obtenemos el máximo permitido por el régimen de esta designación
-        max_permitido = self.regimen.max_asignaturas
-
-        if designaciones_actuales.count() >= max_permitido:
-            raise ValidationError(
-                f'El docente {self.docente} ya ha alcanzado el límite de {max_permitido} asignaturas '
-                f'para su régimen de {self.regimen.dedicacion.nombre}.'
-            )
+        return designaciones_actuales.count() >= regimen.max_asignaturas

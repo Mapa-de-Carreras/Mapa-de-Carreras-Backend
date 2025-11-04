@@ -44,10 +44,7 @@ class AsignaturaListCreateView(APIView):
         if activas is not None:
             msg = f"Listado de asignaturas {'activas' if activas else 'inactivas'}."
 
-        return Response({
-            "message": msg,
-            "data": serializer.data
-        }, status=status.HTTP_200_OK)
+        return Response(serializer.data,status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         tags=["Gestión Académica - Asignaturas"],
@@ -92,10 +89,7 @@ class AsignaturaDetailView(APIView):
     def get(self, request, pk):
         asignatura = asignatura_service.obtener_asignatura(pk)
         serializer = AsignaturaSerializer(asignatura)
-        return Response({
-            "message": f"Asignatura '{serializer.data.get('nombre')}' obtenida correctamente.",
-            "data": serializer.data
-        }, status=status.HTTP_200_OK)
+        return Response(serializer.data,status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         tags=["Gestión Académica - Asignaturas"],

@@ -69,10 +69,7 @@ class CarreraListCreateView(APIView):
         elif vigentes is not None:
             msg = f"Listado de carreras {'vigentes' if vigentes else 'no vigentes'}."
 
-        return Response({
-            "message": msg,
-            "data": serializer.data
-        }, status=status.HTTP_200_OK)
+        return Response(serializer.data,status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         tags=["Gestión Académica - Carreras"],
@@ -124,10 +121,7 @@ class CarreraDetailView(APIView):
     def get(self, request, pk):
         carrera = carrera_service.obtener_carrera(pk)
         serializer = CarreraSerializer(carrera)
-        return Response({
-            "message": f"Carrera '{serializer.data.get('nombre')}' obtenida correctamente.",
-            "data": serializer.data
-        })
+        return Response(serializer.data,status=status.HTTP_200_OK)
 
     # ------------------------------
     # PUT - Actualizar Carrera

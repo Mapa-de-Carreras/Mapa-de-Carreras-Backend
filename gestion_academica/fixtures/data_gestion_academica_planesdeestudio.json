@@ -1,0 +1,30 @@
+[
+{
+        "model": "gestion_academica.plandeestudio",
+        "pk": 1,
+        "fields": {
+        "fecha_inicio": "2017-03-01",
+        "esta_vigente": true,
+        "documento": 1,
+        "resolucion": 1,
+        "carrera": 1,
+        "creado_por": null,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.plandeestudio",
+        "pk": 2,
+        "fields": {
+        "fecha_inicio": "2017-03-01",
+        "esta_vigente": true,
+        "documento": 2,
+        "resolucion": 2,
+        "carrera": 2,
+        "creado_por": null,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    }
+]

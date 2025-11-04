@@ -1,0 +1,46 @@
+[
+    {
+        "model": "gestion_academica.instituto",
+        "pk": 1,
+        "fields": {
+        "codigo": "IDEI",
+        "nombre": "Instituto de Desarrollo Económico e Innovación",
+        "activo": true,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.instituto",
+        "pk": 2,
+        "fields": {
+        "codigo": "ICPA",
+        "nombre": "Instituto de Ciencias Polares, Ambiente y Recursos Naturales",
+        "activo": true,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.instituto",
+        "pk": 3,
+        "fields": {
+        "codigo": "ICSE",
+        "nombre": "Instituto de Cultura Sociedad y Estado",
+        "activo": true,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.instituto",
+        "pk": 4,
+        "fields": {
+        "codigo": "IEC",
+        "nombre": "Instituto de la Educación y del Conocimiento",
+        "activo": true,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    }
+]

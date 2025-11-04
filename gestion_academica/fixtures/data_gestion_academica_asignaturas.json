@@ -1,0 +1,650 @@
+[
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 1,
+        "fields": {
+        "codigo": "MA001",
+        "nombre": "Álgebra",
+        "activo": true,
+        "cuatrimestre": 1,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 5,
+        "horas_practica": 4,
+        "horas_semanales": 9,
+        "horas_totales": 135,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 2,
+        "fields": {
+        "codigo": "IF001",
+        "nombre": "Elementos de Informática",
+        "activo": true,
+        "cuatrimestre": 1,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 4,
+        "horas_practica": 3,
+        "horas_semanales": 7,
+        "horas_totales": 105,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 3,
+        "fields": {
+        "codigo": "IF002",
+        "nombre": "Expresión de Problemas y Algoritmos",
+        "activo": true,
+        "cuatrimestre": 1,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 3,
+        "horas_practica": 3,
+        "horas_semanales": 6,
+        "horas_totales": 90,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 4,
+        "fields": {
+        "codigo": "IF003",
+        "nombre": "Algorítmica y Programación I",
+        "activo": true,
+        "cuatrimestre": 2,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 4,
+        "horas_practica": 4,
+        "horas_semanales": 8,
+        "horas_totales": 120,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 5,
+        "fields": {
+        "codigo": "MA002",
+        "nombre": "Análisis Matemático",
+        "activo": true,
+        "cuatrimestre": 2,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 6,
+        "horas_practica": 5,
+        "horas_semanales": 11,
+        "horas_totales": 165,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 6,
+        "fields": {
+        "codigo": "MA003",
+        "nombre": "Elementos de Lógica y Matemática Discreta",
+        "activo": true,
+        "cuatrimestre": 2,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 4,
+        "horas_practica": 4,
+        "horas_semanales": 8,
+        "horas_totales": 120,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 7,
+        "fields": {
+        "codigo": "IF004",
+        "nombre": "Algorítmica y Programación II",
+        "activo": true,
+        "cuatrimestre": 3,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 4,
+        "horas_practica": 4,
+        "horas_semanales": 8,
+        "horas_totales": 120,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 8,
+        "fields": {
+        "codigo": "IF005",
+        "nombre": "Arquitectura de Computadoras",
+        "activo": true,
+        "cuatrimestre": 3,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 4,
+        "horas_practica": 4,
+        "horas_semanales": 8,
+        "horas_totales": 120,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 9,
+        "fields": {
+        "codigo": "MA004",
+        "nombre": "Estadística",
+        "activo": true,
+        "cuatrimestre": 3,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 3,
+        "horas_practica": 3,
+        "horas_semanales": 6,
+        "horas_totales": 90,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 10,
+        "fields": {
+        "codigo": "IF006",
+        "nombre": "Sistemas y Organizaciones",
+        "activo": true,
+        "cuatrimestre": 3,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 3,
+        "horas_practica": 3,
+        "horas_semanales": 6,
+        "horas_totales": 90,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 11,
+        "fields": {
+        "codigo": "IF007",
+        "nombre": "Bases de Datos I",
+        "activo": true,
+        "cuatrimestre": 4,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 5,
+        "horas_practica": 4,
+        "horas_semanales": 9,
+        "horas_totales": 135,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 12,
+        "fields": {
+        "codigo": "IF008",
+        "nombre": "Ingeniería de Software I",
+        "activo": true,
+        "cuatrimestre": 4,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 5,
+        "horas_practica": 5,
+        "horas_semanales": 10,
+        "horas_totales": 150,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 13,
+        "fields": {
+        "codigo": "IF009",
+        "nombre": "Programación y Diseño Orientado a Objetos",
+        "activo": true,
+        "cuatrimestre": 4,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 4,
+        "horas_practica": 4,
+        "horas_semanales": 8,
+        "horas_totales": 120,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 14,
+        "fields": {
+        "codigo": "IF010",
+        "nombre": "Fundamentos Teóricos de Informática",
+        "activo": true,
+        "cuatrimestre": 5,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 4,
+        "horas_practica": 4,
+        "horas_semanales": 8,
+        "horas_totales": 120,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 15,
+        "fields": {
+        "codigo": "IF011",
+        "nombre": "Ingeniería de Software II",
+        "activo": true,
+        "cuatrimestre": 5,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 4,
+        "horas_practica": 4,
+        "horas_semanales": 8,
+        "horas_totales": 120,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 16,
+        "fields": {
+        "codigo": "IF012",
+        "nombre": "Introducción a la Concurrencia",
+        "activo": true,
+        "cuatrimestre": 5,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 2,
+        "horas_practica": 2,
+        "horas_semanales": 4,
+        "horas_totales": 60,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 17,
+        "fields": {
+        "codigo": "IF013",
+        "nombre": "Laboratorio de Programación y Lenguajes",
+        "activo": true,
+        "cuatrimestre": 5,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 3,
+        "horas_practica": 3,
+        "horas_semanales": 6,
+        "horas_totales": 90,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 18,
+        "fields": {
+        "codigo": "IF014",
+        "nombre": "Bases de Datos II",
+        "activo": true,
+        "cuatrimestre": 6,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 4,
+        "horas_practica": 4,
+        "horas_semanales": 8,
+        "horas_totales": 120,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 19,
+        "fields": {
+        "codigo": "IF015",
+        "nombre": "Laboratorio de Software",
+        "activo": true,
+        "cuatrimestre": 6,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 4,
+        "horas_practica": 3,
+        "horas_semanales": 7,
+        "horas_totales": 105,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 20,
+        "fields": {
+        "codigo": "IF016",
+        "nombre": "Seminario de Aspectos Legales y Profesionales I",
+        "activo": true,
+        "cuatrimestre": 6,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 2,
+        "horas_practica": 2,
+        "horas_semanales": 4,
+        "horas_totales": 60,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 21,
+        "fields": {
+        "codigo": "IF017",
+        "nombre": "Sistemas Operativos",
+        "activo": true,
+        "cuatrimestre": 6,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 4,
+        "horas_practica": 4,
+        "horas_semanales": 8,
+        "horas_totales": 120,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 22,
+        "fields": {
+        "codigo": "IF018",
+        "nombre": "Paradigmas y Lenguajes de Programación",
+        "activo": true,
+        "cuatrimestre": 7,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 4,
+        "horas_practica": 4,
+        "horas_semanales": 8,
+        "horas_totales": 120,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 23,
+        "fields": {
+        "codigo": "IF019",
+        "nombre": "Redes y Transmisión de Datos",
+        "activo": true,
+        "cuatrimestre": 7,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 5,
+        "horas_practica": 4,
+        "horas_semanales": 9,
+        "horas_totales": 135,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 24,
+        "fields": {
+        "codigo": "IF020",
+        "nombre": "Taller de Nuevas Tecnologías",
+        "activo": true,
+        "cuatrimestre": 7,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 3,
+        "horas_practica": 3,
+        "horas_semanales": 6,
+        "horas_totales": 90,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 25,
+        "fields": {
+        "codigo": "IF021",
+        "nombre": "Ingeniería de Software III",
+        "activo": true,
+        "cuatrimestre": 8,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 4,
+        "horas_practica": 4,
+        "horas_semanales": 8,
+        "horas_totales": 120,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 26,
+        "fields": {
+        "codigo": "IF022",
+        "nombre": "Seminario de Aspectos Legales y Profesionales II",
+        "activo": true,
+        "cuatrimestre": 8,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 2,
+        "horas_practica": 2,
+        "horas_semanales": 4,
+        "horas_totales": 60,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 27,
+        "fields": {
+        "codigo": "IF023",
+        "nombre": "Sistemas Distribuidos",
+        "activo": true,
+        "cuatrimestre": 8,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 4,
+        "horas_practica": 4,
+        "horas_semanales": 8,
+        "horas_totales": 120,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 28,
+        "fields": {
+        "codigo": "IF024",
+        "nombre": "Sistemas Inteligentes",
+        "activo": true,
+        "cuatrimestre": 8,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 3,
+        "horas_practica": 3,
+        "horas_semanales": 6,
+        "horas_totales": 90,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 29,
+        "fields": {
+        "codigo": "IF025",
+        "nombre": "Bases de Datos Distribuidas",
+        "activo": true,
+        "cuatrimestre": 9,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 3,
+        "horas_practica": 3,
+        "horas_semanales": 6,
+        "horas_totales": 90,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 30,
+        "fields": {
+        "codigo": "IF026",
+        "nombre": "Seminario de Seguridad",
+        "activo": true,
+        "cuatrimestre": 9,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 2,
+        "horas_practica": 2,
+        "horas_semanales": 4,
+        "horas_totales": 60,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 31,
+        "fields": {
+        "codigo": "IF027",
+        "nombre": "Sistemas de Tiempo Real",
+        "activo": true,
+        "cuatrimestre": 9,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 4,
+        "horas_practica": 3,
+        "horas_semanales": 7,
+        "horas_totales": 105,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 32,
+        "fields": {
+        "codigo": "IF028",
+        "nombre": "Sistemas Paralelos",
+        "activo": true,
+        "cuatrimestre": 9,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 3,
+        "horas_practica": 3,
+        "horas_semanales": 6,
+        "horas_totales": 90,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 33,
+        "fields": {
+        "codigo": "IF029",
+        "nombre": "Modelos y Simulación",
+        "activo": true,
+        "cuatrimestre": 10,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 3,
+        "horas_practica": 3,
+        "horas_semanales": 6,
+        "horas_totales": 90,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 34,
+        "fields": {
+        "codigo": "IF030",
+        "nombre": "Proyecto de Software",
+        "activo": true,
+        "cuatrimestre": 10,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 4,
+        "horas_practica": 4,
+        "horas_semanales": 8,
+        "horas_totales": 120,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 35,
+        "fields": {
+        "codigo": "FA007",
+        "nombre": "Acreditación de Idioma Inglés",
+        "activo": true,
+        "cuatrimestre": 10,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 0,
+        "horas_practica": 0,
+        "horas_semanales": 0,
+        "horas_totales": 0,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.asignatura",
+        "pk": 36,
+        "fields": {
+        "codigo": "IF031",
+        "nombre": "Tesina",
+        "activo": true,
+        "cuatrimestre": 10,
+        "tipo_asignatura": "OBLIGATORIA",
+        "tipo_duracion": "CUATRIMESTRAL",
+        "horas_teoria": 0,
+        "horas_practica": 0,
+        "horas_semanales": 0,
+        "horas_totales": 200,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    }
+]

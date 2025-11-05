@@ -23,7 +23,7 @@ class LogoutSerializer(serializers.Serializer):
 class RolSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Rol
-        fields = ['id', 'nombre', 'description']
+        fields = ['id', 'nombre', 'descripcion']
 
 
 class RolUsuarioSerializer(serializers.ModelSerializer):

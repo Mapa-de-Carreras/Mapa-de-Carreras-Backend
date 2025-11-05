@@ -21,4 +21,6 @@ from .M3_designaciones_docentes import (
     DesignacionSerializer, ComisionSerializer, CargoSerializer
 )
 from .auth_serializers import ActivarCuentaSerializer, EnviarCodigoVerificacionSerializer, RecuperarUsuarioSerializer, RestablecerContraseñaSerializer
+
+from .user_serializers import UsuarioSerializer, EditarUsuarioSerializer
 from .M1_gestion_academica import InstitutoSerializer

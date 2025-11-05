@@ -1,15 +1,18 @@
 
 from rest_framework import viewsets, mixins
-# Ahora el permiso por defecto debe ser más estricto
-from rest_framework.permissions import IsAdminUser
 
+# Permisos
+from gestion_academica.permissions.admin_permissions import EsAdministrador
+from ...permissions.editar_usuario_permissions import UsuarioViewSetPermission
+# Modelos
 from gestion_academica.models.M4_gestion_usuarios_autenticacion import Usuario
-from ...serializers.M4_gestion_usuarios_autenticacion import UsuarioSerializer
-# importaciones para realizar el filtrado de usuarios deshabilitados
+# Serializers
+from ...serializers import UsuarioSerializer, EditarUsuarioSerializer
+# Importaciones para realizar el filtrado de usuarios deshabilitados
 from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
-
-from ..filters import UsuarioFilter
+from .filters import UsuarioFilter
+# Swagger
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
@@ -53,7 +56,7 @@ class UsuarioViewSet(mixins.ListModelMixin,
     serializer_class = UsuarioSerializer
 
     # El permiso por defecto es ser Admin.
-    permission_classes = [IsAdminUser]
+    permission_classes = [UsuarioViewSetPermission]
 
     ''' Lógica para filtrado de usuarios deshabilitados '''
     filter_backends = [DjangoFilterBackend, SearchFilter]
@@ -67,3 +70,25 @@ class UsuarioViewSet(mixins.ListModelMixin,
     def list(self, request, *args, **kwargs):
         """ Lista, filtra (manualmente decorado para Swagger) y busca usuarios """
         return super().list(request, *args, **kwargs)
+
+    def get_serializer_class(self):
+        """
+        Devuelve un serializer diferente según quién esté editando.
+        """
+        # Si es Admin (usando la lógica de EsAdministrador ), usa el serializer completo
+        if EsAdministrador().has_permission(self.request, self):
+            return UsuarioSerializer
+
+        # Si es otro rol (Docente/Coordinador), usa el limitado
+        return EditarUsuarioSerializer
+
+    @swagger_auto_schema(
+        request_body=UsuarioSerializer
+    )
+    def partial_update(self, request, *args, **kwargs):
+        """
+        Actualiza parcialmente (PATCH) un usuario.
+        El serializer y los permisos se aplican dinámicamente
+        según el rol del solicitante.
+        """
+        return super().partial_update(request, *args, **kwargs)

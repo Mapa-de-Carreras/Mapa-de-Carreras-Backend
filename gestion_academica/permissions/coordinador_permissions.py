@@ -7,6 +7,10 @@ class EsCoordinadorDeCarrera(permissions.BasePermission):
     Permite editar solo carreras que el usuario coordina actualmente.
     """
 
+    def has_permission(self, request, view):
+        usuario = request.user
+        return usuario.is_authenticated and usuario.roles.filter(nombre__iexact="COORDINADOR").exists()
+
     def has_object_permission(self, request, view, obj):
         usuario = request.user
         

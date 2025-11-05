@@ -38,7 +38,12 @@ class CarreraSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 
-
+class CarreraVigenciaUpdateSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = models.Carrera
+        fields = ["esta_vigente"]
+        
 
 class CarreraCreateUpdateSerializer(serializers.ModelSerializer):
     instituto_id = serializers.PrimaryKeyRelatedField(
@@ -53,7 +58,7 @@ class CarreraCreateUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Carrera
-        fields = ["codigo", "nombre", "nivel", "esta_vigente", "instituto_id"]
+        fields = ["codigo", "nombre", "nivel", "instituto_id"]
         read_only_fields = ["esta_vigente"]
 
     # -------------------------------
@@ -167,48 +172,58 @@ class PlanAsignaturaSerializer(serializers.ModelSerializer):
 
 
 class PlanDeEstudioSerializer(serializers.ModelSerializer):
-    # referencias a Resolucion, Carrera y Documento
-    resolucion = ResolucionSerializer(read_only=True)
-    resolucion_id = serializers.PrimaryKeyRelatedField(
-        source="resolucion",
-        queryset=models.Resolucion.objects.all(),
-        write_only=True
-    )
-
     carrera = CarreraSerializer(read_only=True)
-    carrera_id = serializers.PrimaryKeyRelatedField(
-        source="carrera",
-        queryset=models.Carrera.objects.all(),
-        write_only=True,
-        required=False,
-        allow_null=True
-    )
-
-    documento = DocumentoSerializer(read_only=True)
-    documento_id = serializers.PrimaryKeyRelatedField(
-        source="documento",
-        queryset=models.Documento.objects.all(),
-        write_only=True,
-        required=False,
-        allow_null=True
-    )
-
-    # mostramos las asignaturas del plan a través del through (PlanAsignatura)
-    asignaturas = PlanAsignaturaSerializer(
-        source="planasignatura_set", many=True, read_only=True
-    )
+    resolucion = serializers.StringRelatedField(read_only=True)
+    documento = serializers.StringRelatedField(read_only=True)
+    asignaturas = AsignaturaSerializer(read_only=True, many=True)
 
     class Meta:
         model = models.PlanDeEstudio
         fields = [
-            "id", "fecha_inicio", "esta_vigente",
-            "documento", "documento_id",
-            "resolucion", "resolucion_id",
-            "carrera", "carrera_id",
-            "asignaturas", "creado_por",
+            "id", "fecha_inicio", "esta_vigente", "carrera",
+            "resolucion", "documento", "asignaturas",
             "created_at", "updated_at"
         ]
-        read_only_fields = ["asignaturas"]
+
+
+class PlanDeEstudioCreateUpdateSerializer(serializers.ModelSerializer):
+    carrera_id = serializers.PrimaryKeyRelatedField(
+        source="carrera", queryset=models.Carrera.objects.all(), write_only=True
+    )
+    resolucion_id = serializers.PrimaryKeyRelatedField(
+        source="resolucion", queryset=models.Resolucion.objects.all(), write_only=True
+    )
+    documento_id = serializers.PrimaryKeyRelatedField(
+        source="documento", queryset=models.Documento.objects.all(),
+        required=False, allow_null=True, write_only=True
+    )
+
+    class Meta:
+        model = models.PlanDeEstudio
+        fields = ["fecha_inicio", "esta_vigente", "carrera_id", "resolucion_id", "documento_id"]
+
+    def validate(self, data):
+        carrera = data.get("carrera") or getattr(self.instance, "carrera", None)
+        resolucion = data.get("resolucion") or getattr(self.instance, "resolucion", None)
+
+        if carrera and resolucion:
+            existe = models.PlanDeEstudio.objects.filter(
+                carrera=carrera,
+                resolucion=resolucion
+            ).exclude(id=self.instance.id if self.instance else None).exists()
+
+            if existe:
+                raise serializers.ValidationError(
+                    "Ya existe un plan de estudios con esta resolución para la carrera."
+                )
+
+        return data
+    
+
+class PlanDeEstudioVigenciaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.PlanDeEstudio
+        fields = ["esta_vigente"]
 
 
 class CorrelativaSerializer(serializers.ModelSerializer):

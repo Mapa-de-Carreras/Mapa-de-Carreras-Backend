@@ -6,7 +6,7 @@ from gestion_academica.permissions import EsAdministrador, EsCoordinadorDeCarrer
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
-from gestion_academica.serializers.M1_gestion_academica import CarreraSerializer,CarreraCreateUpdateSerializer
+from gestion_academica.serializers.M1_gestion_academica import CarreraSerializer,CarreraCreateUpdateSerializer,CarreraVigenciaUpdateSerializer
 from gestion_academica.services.gestion_academica import carreras as carrera_service
 
 
@@ -69,10 +69,7 @@ class CarreraListCreateView(APIView):
         elif vigentes is not None:
             msg = f"Listado de carreras {'vigentes' if vigentes else 'no vigentes'}."
 
-        return Response({
-            "message": msg,
-            "data": serializer.data
-        }, status=status.HTTP_200_OK)
+        return Response(serializer.data,status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         tags=["Gestión Académica - Carreras"],
@@ -124,10 +121,7 @@ class CarreraDetailView(APIView):
     def get(self, request, pk):
         carrera = carrera_service.obtener_carrera(pk)
         serializer = CarreraSerializer(carrera)
-        return Response({
-            "message": f"Carrera '{serializer.data.get('nombre')}' obtenida correctamente.",
-            "data": serializer.data
-        })
+        return Response(serializer.data,status=status.HTTP_200_OK)
 
     # ------------------------------
     # PUT - Actualizar Carrera
@@ -177,4 +171,49 @@ class CarreraDetailView(APIView):
         return Response({
             "message": "Carrera eliminada correctamente (marcada como no vigente)."
         }, status=status.HTTP_200_OK)
+        
+
+
+class CarreraVigenciaUpdateView(APIView):
+    """
+    Activar o desactivar la vigencia de una carrera.
+    Solo puede hacerlo un administrador.
+    """
+
+    def get_permissions(self):
+        return [EsAdministrador()]
+
+    @swagger_auto_schema(
+        tags=["Gestión Académica - Carreras"],
+        security=[{'Bearer': []}],
+        operation_summary="Actualizar vigencia de una Carrera",
+        operation_description="Permite al administrador actualizar la vigencia de una carrera.",
+        request_body=CarreraVigenciaUpdateSerializer,
+        responses={
+            200: "Estado de vigencia actualizado correctamente.",
+        }
+    )
+    def patch(self, request, pk):
+        """Cambia el estado de vigencia (activa/inactiva) de una carrera"""
+        try:
+            carrera = carrera_service.obtener_carrera(pk)
+        except carrera.DoesNotExist:
+            return Response(
+                {"message": "Carrera no encontrada."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = CarreraSerializer(carrera, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            estado = "activada" if serializer.validated_data["esta_vigente"] else "desactivada"
+            return Response({
+                "message": f"La carrera fue {estado} correctamente.",
+                "data": serializer.data
+            }, status=status.HTTP_200_OK)
+
+        return Response({
+            "message": "Error al cambiar la vigencia de la carrera.",
+            "errors": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
 

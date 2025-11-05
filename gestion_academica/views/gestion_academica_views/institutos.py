@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from gestion_academica.serializers.M1_gestion_academica import InstitutoSerializer
 from rest_framework.permissions import AllowAny
-from gestion_academica.permissions import EsAdministrador, EsCoordinadorDeCarrera
+from gestion_academica.permissions import EsAdministrador
 from gestion_academica.services.gestion_academica import institutos as instituto_service
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -28,10 +28,7 @@ class InstitutoListCreateView(APIView):
     def get(self, request):
         institutos = instituto_service.listar_institutos()
         serializer = InstitutoSerializer(institutos, many=True)
-        return Response({
-            "message": "Listado de institutos obtenido correctamente.",
-            "data": serializer.data
-        }, status=status.HTTP_200_OK)
+        return Response(serializer.data,status=status.HTTP_200_OK)
 
     # ------------------------------
     # POST - Crear Instituto
@@ -83,10 +80,7 @@ class InstitutoDetailView(APIView):
     def get(self, request, pk):
         instituto = instituto_service.obtener_instituto(pk)
         serializer = InstitutoSerializer(instituto)
-        return Response({
-            "message": f"Instituto '{serializer.data.get('nombre')}' obtenido correctamente.",
-            "data": serializer.data
-        })
+        return Response(serializer.data,status=status.HTTP_200_OK)
 
     # ------------------------------
     # PUT - Actualizar
@@ -119,15 +113,21 @@ class InstitutoDetailView(APIView):
     # DELETE - Eliminar
     # ------------------------------
     @swagger_auto_schema(
-        tags=["Gestión Académica - Institutos"],
-        operation_summary="Eliminar un Instituto",
-        operation_description="Permite al administrador eliminar un instituto del sistema.",
-        responses={200: "Instituto eliminado correctamente"}
+    tags=["Gestión Académica - Institutos"],
+    operation_summary="Eliminar un Instituto",
+    operation_description="Permite al administrador eliminar un instituto. "
+                          "Si tiene carreras asociadas, la operación no será permitida.",
+    responses={
+        200: "Instituto eliminado correctamente.",
+        400: "No se puede eliminar el instituto porque tiene carreras asociadas.",
+        404: "Instituto no encontrado."
+        }   
     )
     def delete(self, request, pk):
         instituto_service.eliminar_instituto(pk)
-        return Response({
-            "message": "Instituto eliminado correctamente."
-        }, status=status.HTTP_200_OK)
+        return Response(
+            {"message": "Instituto eliminado correctamente."},
+            status=status.HTTP_200_OK
+        )
 
 

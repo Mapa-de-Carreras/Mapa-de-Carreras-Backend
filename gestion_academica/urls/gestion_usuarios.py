@@ -9,7 +9,8 @@ from gestion_academica.views import (
     LogoutView,
     EditarUsuarioView,
     CambiarContrasenaView,
-    UsuarioViewSet
+    UsuarioViewSet,
+    RolViewSet
 )
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework.permissions import AllowAny
@@ -17,6 +18,7 @@ from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
 router.register(r'usuarios', UsuarioViewSet, basename='usuario')
+router.register(r'roles', RolViewSet, basename='roles')
 
 urlpatterns = [
     path('', include(router.urls)),

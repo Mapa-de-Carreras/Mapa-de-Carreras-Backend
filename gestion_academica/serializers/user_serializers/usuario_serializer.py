@@ -90,8 +90,19 @@ class UsuarioSerializer(BaseUsuarioSerializer):
         """
         # 1. Llama a la validación del padre (BaseUsuarioSerializer)
         data = super().validate(data)
-        # --- 2. USA LA LÓGICA CENTRALIZADA ---
-        validar_nueva_contraseña(data['password'], data['password2'])
+
+        is_create = (self.instance is None) # Self.instance=Usuario si no es CREATE
+        if is_create: # Se valida la contraseña solo si es CREATE
+            if 'password' not in data or 'password2' not in data:
+                 raise serializers.ValidationError({"password": "Password y password2 son requeridos para registrar."})
+            validar_nueva_contraseña(data['password'], data['password2'])
+        else:
+            # Flujo de Update (PATCH por Admin)
+            # NO permitimos cambiar la contraseña aquí.
+            if 'password' in data or 'password2' in data:
+                raise serializers.ValidationError({
+                    "password": "No se puede cambiar la contraseña desde este endpoint. Use el flujo de reseteo de contraseña."
+                })
         return data
 
     def create(self, validated_data):

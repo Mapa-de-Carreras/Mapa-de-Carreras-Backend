@@ -1,4 +1,4 @@
 from .admin_permissions import EsAdministrador
 from .coordinador_permissions import EsCoordinadorDeCarrera
 from .docente_permissions import EsDocente
-from .coordinador_o_docente import IsCoordinadorOrDocente
+from .editar_usuario_permissions import UsuarioViewSetPermission

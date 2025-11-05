@@ -7,7 +7,6 @@ from gestion_academica.views import (
     RecuperarUsuarioView,
     LoginView,
     LogoutView,
-    EditarUsuarioView,
     CambiarContrasenaView,
     UsuarioViewSet,
     RolViewSet
@@ -35,7 +34,6 @@ urlpatterns = [
     path('auth/recuperar/solicitar-codigo/', SolicitarCodigoView.as_view(), name='solicitar_codigo_verificacion'), 
     path('auth/recuperar/restablecer-contraseña/', RestablecerContraseñaView.as_view(), name='restablecer_contraseña'),
     path('auth/recuperar/recuperar-username/', RecuperarUsuarioView.as_view(), name='recuperar_username'),
-    path('auth/editar-usuario/', EditarUsuarioView.as_view(), name='editar_usuario'),
     path('auth/cambiar-contraseña/', CambiarContrasenaView.as_view(), name='cambiar_contraseña'),
 
 ]

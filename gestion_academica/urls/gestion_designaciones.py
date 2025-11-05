@@ -1,8 +1,8 @@
 # gestion_academica/urls/gestion_designaciones.py
 
 from rest_framework.routers import DefaultRouter
-from gestion_academica.views.M3_designaciones_docentes import DesignacionViewSet
-from gestion_academica.views.M3_cargos import CargoViewSet
+from gestion_academica.views.gestion_designaciones_views.designaciones_docentes import DesignacionViewSet
+from gestion_academica.views.gestion_designaciones_views.cargos import CargoViewSet
 
 router = DefaultRouter()
 

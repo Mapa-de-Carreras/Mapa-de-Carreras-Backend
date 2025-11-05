@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from gestion_academica import models
 from .base_usuario_serializer import BaseUsuarioSerializer
+from ..M1_gestion_academica import CarreraSerializer
 from ..validators import validar_nueva_contraseña
 
 class CaseInsensitiveSlugRelatedField(serializers.SlugRelatedField):
@@ -46,13 +47,15 @@ class UsuarioSerializer(BaseUsuarioSerializer):
         style={'input_type': 'password'}
     )
 
+    carreras_coordinadas = serializers.SerializerMethodField()
+
     class Meta:
         model = models.Usuario
         # El Admin puede ver y editar todo
         fields = [
             'id', 'username', 'first_name', 'last_name', 'email', 'is_staff', 'is_active',
             'password', 'password2', 'legajo', 'fecha_nacimiento', 
-            'celular', 'roles'
+            'celular', 'roles', 'carreras_coordinadas'
         ]
         extra_kwargs = {
             # Hacemos que la contraseña no sea requerida en PATCH
@@ -60,6 +63,26 @@ class UsuarioSerializer(BaseUsuarioSerializer):
             'password2': {'required': False},
             'fecha_nacimiento': {'required': True} # Sigue siendo req. para crear
         }
+    
+    def get_carreras_coordinadas(self, obj):
+        """
+        Si el usuario es un Coordinador, devuelve la lista de
+        Carreras que tiene asignadas Y ACTIVAS.
+        """
+        # Comprobamos si el Usuario es un Coordinador
+        if hasattr(obj, 'coordinador'):            
+            # Accedemos al M2M 'carreras_coordinadas'
+            # y filtramos usando la tabla 'through' (carreracoordinacion)
+            # para traer solo las carreras donde la relación está 'activo=True'.
+            carreras_activas = obj.coordinador.carreras_coordinadas.filter(
+                carreracoordinacion__activo=True
+            )
+            
+            # Usamos tu CarreraSerializer existente
+            return CarreraSerializer(carreras_activas, many=True).data
+        
+        # Si no es coordinador, devuelve lista vacía
+        return []
 
     def validate(self, data):
         """

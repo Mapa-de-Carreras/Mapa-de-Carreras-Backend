@@ -4,12 +4,12 @@ from rest_framework import viewsets, mixins
 from rest_framework.permissions import IsAdminUser
 
 from gestion_academica.models.M4_gestion_usuarios_autenticacion import Usuario
-from ..serializers.M4_gestion_usuarios_autenticacion import UsuarioSerializer
+from ...serializers.M4_gestion_usuarios_autenticacion import UsuarioSerializer
 # importaciones para realizar el filtrado de usuarios deshabilitados
 from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 
-from .filters import UsuarioFilter
+from ..filters import UsuarioFilter
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 

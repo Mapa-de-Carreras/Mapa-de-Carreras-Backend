@@ -6,7 +6,7 @@ from rest_framework import status, permissions
 from drf_yasg.utils import swagger_auto_schema
 
 from gestion_academica.serializers.M1_gestion_academica import (
-    PlanDeEstudioSerializer, PlanDeEstudioCreateUpdateSerializer
+    PlanDeEstudioSerializer, PlanDeEstudioCreateUpdateSerializer,PlanDeEstudioVigenciaSerializer
 )
 from gestion_academica.services import plan_de_estudio_service
 #from gestion_academica.permissions.roles_permisos import EsAdministrador, EsCoordinadorDeCarrera
@@ -34,6 +34,7 @@ class PlanDeEstudioListCreateView(APIView):
     @swagger_auto_schema(
         request_body=PlanDeEstudioCreateUpdateSerializer,
         responses={201: PlanDeEstudioSerializer()},
+        operation_description="Permite que un administrador o Coordinador de la carrera cree un nuevo plan de estudio ",
         tags=["Gestión Académica - Planes de Estudio"]
     )
     def post(self, request):
@@ -61,6 +62,7 @@ class PlanDeEstudioDetailView(APIView):
     @swagger_auto_schema(
         tags=["Gestión Académica - Planes de Estudio"],
         operation_summary="Obtener Plan de Estudio",
+        operation_description="Permite ver el detalle de un plan de estudio.",
         responses={200: PlanDeEstudioSerializer()}
     )
     def get(self, request, pk):
@@ -70,10 +72,12 @@ class PlanDeEstudioDetailView(APIView):
 
     @swagger_auto_schema(
         request_body=PlanDeEstudioCreateUpdateSerializer,
-        tags=["Gestión Académica - Planes de Estudio"]
+        tags=["Gestión Académica - Planes de Estudio"],
+        operation_description="Permite que un administrador o coordinador de la carrera edite un plan de estudio.",
     )
     def put(self, request, pk):
-        serializer = PlanDeEstudioCreateUpdateSerializer(data=request.data)
+        plan = plan_de_estudio_service.obtener_plan(pk)
+        serializer = PlanDeEstudioCreateUpdateSerializer(instance=plan,data=request.data)
         if serializer.is_valid():
             plan = plan_de_estudio_service.actualizar_plan(pk, serializer.validated_data)
             return Response({
@@ -88,6 +92,7 @@ class PlanDeEstudioDetailView(APIView):
     @swagger_auto_schema(
         tags=["Gestión Académica - Planes de Estudio"],
         operation_summary="Eliminar un Plan de Estudio",
+        operation_description="Permite que un administrador o coordinador de la carrera elimine un plan de estudio.",
         responses={200: "Plan eliminado correctamente"}
     )
     def delete(self, request, pk):
@@ -95,3 +100,41 @@ class PlanDeEstudioDetailView(APIView):
         return Response({
             "message": "Plan de estudio eliminado correctamente."
         }, status=status.HTTP_200_OK)
+        
+
+class PlanDeEstudioVigenciaView(APIView):
+    """Cambiar la vigencia de un Plan de Estudio"""
+
+    def get_permissions(self):
+        return [permissions.IsAuthenticated()]
+
+    @swagger_auto_schema(
+        tags=["Gestión Académica - Planes de Estudio"],
+        operation_summary="Cambiar vigencia de un Plan de Estudio",
+        operation_description=(
+            "Permite activar o desactivar la vigencia de un plan de estudio. "
+            "Solo accesible para administradores o coordinadores de la carrera correspondiente."
+        ),
+        request_body=PlanDeEstudioVigenciaSerializer,
+        responses={
+            200: "Vigencia actualizada correctamente.",
+            400: "Error en los datos enviados.",
+            403: "No tiene permisos para modificar este plan.",
+            404: "Plan de estudio no encontrado."
+        }
+    )
+    def patch(self, request, pk):
+        plan = plan_de_estudio_service.obtener_plan(pk)
+        serializer = PlanDeEstudioVigenciaSerializer(plan, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            plan_actualizado = plan_de_estudio_service.cambiar_vigencia(pk, serializer.validated_data["esta_vigente"])
+            return Response({
+                "message": "Vigencia del plan actualizada correctamente.",
+                "data": PlanDeEstudioSerializer(plan_actualizado).data
+            }, status=status.HTTP_200_OK)
+
+        return Response({
+            "message": "Error al actualizar la vigencia del plan de estudio.",
+            "errors": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)

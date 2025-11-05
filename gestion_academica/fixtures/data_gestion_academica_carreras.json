@@ -1,0 +1,132 @@
+[
+    {
+        "model": "gestion_academica.carrera",
+        "pk": 1,
+        "fields": {
+        "codigo": "LS",
+        "nombre": "Licenciatura en Sistemas(con orientación Calidad de Software)",
+        "nivel": "GRADO",
+        "esta_vigente": true,
+        "instituto": 1,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.carrera",
+        "pk": 2,
+        "fields": {
+        "codigo": "LE",
+        "nombre": "Licenciatura en Economía",
+        "nivel": "GRADO",
+        "esta_vigente": true,
+        "instituto": 1,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.carrera",
+        "pk": 3,
+        "fields": {
+        "codigo": "LAD",
+        "nombre": "Licenciatura en Administración Pública",
+        "nivel": "GRADO",
+        "esta_vigente": true,
+        "instituto": 1,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.carrera",
+        "pk": 4,
+        "fields": {
+        "codigo": "LGE",
+        "nombre": "Licenciatura en Gestión Empresarial",
+        "nivel": "GRADO",
+        "esta_vigente": true,
+        "instituto": 1,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.carrera",
+        "pk": 5,
+        "fields": {
+        "codigo": "LT",
+        "nombre": "Licenciatura en Turismo",
+        "nivel": "GRADO",
+        "esta_vigente": true,
+        "instituto": 1,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.carrera",
+        "pk": 6,
+        "fields": {
+        "codigo": "CP",
+        "nombre": "Contador Público",
+        "nivel": "GRADO",
+        "esta_vigente": true,
+        "instituto": 1,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.carrera",
+        "pk": 7,
+        "fields": {
+        "codigo": "ID",
+        "nombre": "Ingeniería Industrial",
+        "nivel": "GRADO",
+        "esta_vigente": true,
+        "instituto": 1,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.carrera",
+        "pk": 8,
+        "fields": {
+        "codigo": "AUS",
+        "nombre": "Analista Universitario en Sistemas",
+        "nivel": "PRE GRADO",
+        "esta_vigente": true,
+        "instituto": 1,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.carrera",
+        "pk": 9,
+        "fields": {
+        "codigo": "TT",
+        "nombre": "Técnico en Turismo",
+        "nivel": "PRE GRADO",
+        "esta_vigente": true,
+        "instituto": 1,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.carrera",
+        "pk": 10,
+        "fields": {
+        "codigo": "TUC",
+        "nombre": "Técnico Universitario Contable",
+        "nivel": "PRE GRADO",
+        "esta_vigente": true,
+        "instituto": 1,
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-01T00:00:00Z"
+        }
+    }
+]

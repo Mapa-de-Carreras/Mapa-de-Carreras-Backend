@@ -41,48 +41,6 @@ class DocenteViewSet(viewsets.ModelViewSet):
 
         data = request.data.copy()
 
-        # PRIMERA opcion: se crea un docente con los datos de un usuario ya existente
-        # usuario_id = request.data.get("usuario_id")
-
-        # if usuario_id:
-        #     usuario = get_object_or_404(models.Usuario, id=usuario_id)
-
-        #     # opcional: no permitir crear docente si el usuario no esta activo
-        #     # if not usuario.is_active:
-        #     #     return Response(
-        #     #         {"detail": "El usuario debe activar su cuenta antes de ser asignado como docente."},
-        #     #         status=status.HTTP_400_BAD_REQUEST
-        #     #     )
-
-        #     # si ya es un docente, no se puede voler a asignar
-        #     if hasattr(usuario, "docente"):
-        #         return Response(
-        #             {"detail": "El usuario ya es docente registrado."},
-        #             status=status.HTTP_400_BAD_REQUEST
-        #         )
-
-        #     # se crea un docente a partir del usuario existente
-        #     try:
-        #         with transaction.atomic():
-        #             docente = models.Docente.objects.create(
-        #                 usuario_ptr_id=usuario_id,  # vinculo al usuario base
-        #                 modalidad_id=request.data.get("modalidad_id"),
-        #                 dedicacion_id=request.data.get("dedicacion_id"),
-        #                 caracter_id=request.data.get("caracter_id"),
-        #                 cantidad_materias=0
-        #             )
-
-        #             serializer = self.get_serializer(docente)
-        #             return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        #     except IntegrityError as e:
-        #         return Response(
-        #             {"detail": f"Error de base de datos: {str(e)}"},
-        #             status=status.HTTP_400_BAD_REQUEST
-        #         )
-
-        # SEGUNDA opcion: se crea un docente desde cero
-
         # verifica legajo unico
         legajo = request.data.get("legajo")
         if not legajo:

@@ -1,0 +1,26 @@
+[
+    {
+        "model": "gestion_academica.documento",
+        "pk": 1,
+        "fields": {
+        "tipo": "ORDENANZA",
+        "emisor": "UNTDF",
+        "numero": "50",
+        "anio": 2017,
+        "archivo": null,
+        "created_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.documento",
+        "pk": 2,
+        "fields": {
+        "tipo": "ORDENANZA",
+        "emisor": "UNTDF",
+        "numero": "49",
+        "anio": 2017,
+        "archivo": null,
+        "created_at": "2025-01-01T00:00:00Z"
+        }
+    }
+]

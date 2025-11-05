@@ -68,6 +68,11 @@ Para ejecutar comandos de Django, asegúrate de que los contenedores estén corr
     ```bash
     docker compose exec web python manage.py test gestion_academica.tests.tests
     ```
+    **Ejecutar el loaddata**:
+    ```bash
+    docker compose exec web python manage.py cargar_datos
+    ```
+    
 
 ### Nota 
 

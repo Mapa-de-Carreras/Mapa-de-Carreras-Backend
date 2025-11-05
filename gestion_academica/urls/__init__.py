@@ -1,7 +1,9 @@
-# gestion_academica/urls/__init__.py
-from django.urls import include, path
+
+from django.urls import path, include
 
 urlpatterns = [
-    path("", include("gestion_academica.urls.M2_gestion_docentes")),
-    path("", include("gestion_academica.urls.M3_designaciones_docentes"))
+    path('', include('gestion_academica.urls.gestion_academica')),
+    path('', include('gestion_academica.urls.gestion_usuarios')),
+    path("", include("gestion_academica.urls.gestion_docentes")),
+    path("", include("gestion_academica.urls.gestion_designaciones"))
 ]

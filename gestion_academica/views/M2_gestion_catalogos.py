@@ -1,10 +1,8 @@
 # gestion_academica/views/M2_gestion_catalogos.py
 
-from rest_framework import viewsets, status
+from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
-from django.shortcuts import get_object_or_404
 
 from gestion_academica import models
 from gestion_academica.serializers.M2_gestion_docentes import (

@@ -1,4 +1,5 @@
 from rest_framework import permissions
+from rest_framework import serializers
 from gestion_academica.models import Coordinador, CarreraCoordinacion
 
 
@@ -6,6 +7,8 @@ class EsCoordinadorDeCarrera(permissions.BasePermission):
     """
     Permite editar solo carreras que el usuario coordina actualmente.
     """
+
+    carreras_coordinadas = serializers.SerializerMethodField()
 
     def has_permission(self, request, view):
         usuario = request.user

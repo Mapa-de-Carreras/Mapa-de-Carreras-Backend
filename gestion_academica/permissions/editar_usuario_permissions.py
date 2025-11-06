@@ -5,8 +5,14 @@ from .coordinador_permissions import EsCoordinadorDeCarrera
 
 class UsuarioViewSetPermission(permissions.BasePermission):
     """
-    Permiso personalizado para el ViewSet de Usuarios que
-    reutiliza los permisos modulares.
+    Permiso personalizado para el ViewSet de Usuarios.
+    
+    Reglas:
+    1. Un Admin puede hacer TODO (list, retrieve, update, destroy).
+    2. Un usuario NO-Admin (Docente, Coord, etc.) solo puede
+       actuar sobre su PROPIO PK.
+    3. Si un NO-Admin intenta ver un PK ajeno (exista o no),
+       siempre recibirá 403.
     """
 
     def has_permission(self, request, view):
@@ -14,41 +20,49 @@ class UsuarioViewSetPermission(permissions.BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
 
-        # 2. Reutilizamos EsAdministrador para la lista y borrado
-        if view.action == 'list' or view.action == 'destroy':
-            return EsAdministrador().has_permission(request, view)
-
-        # 3. Para otras acciones (retrieve, update, partial_update),
-        #    dejamos que 'has_object_permission' decida.
-        return True
-
-    def has_object_permission(self, request, view, obj):
-        # 'obj' es el usuario que se está intentando ver/editar
-        # 'request.user' es el usuario que hace la petición
-        
-        # 1. Admin (reutilizando EsAdministrador )
+        # 2. El Admin siempre tiene permiso para todo.
         if EsAdministrador().has_permission(request, view):
             return True
 
-        # 2. Es el dueño de la cuenta?
-        is_owner = (request.user == obj)
-
-        # 3. Lógica para Coordinador (reutilizando EsCoordinadorDeCarrera)
-        if EsCoordinadorDeCarrera().has_permission(request, view):
-            # Comprueba si el objetivo ('obj') es un docente
-            target_es_docente = obj.roles.filter(nombre__iexact="DOCENTE").exists()
-            # Un Coordinador puede editarse a sí mismo O a un Docente
-            return is_owner or target_es_docente
-
-        # 4. Lógica para Docente (reutilizando EsDocente)
-        if EsDocente().has_permission(request, view):
-            # Un Docente solo puede editarse a sí mismo
-            return is_owner
+        # --- Lógica para NO-ADMINISTRADORES ---
         
-        # 5. Usuario Común (sin esos roles)
-        # Solo puede VER (GET) su propio perfil, no editarlo (PATCH)
-        if request.method in permissions.SAFE_METHODS: # SAFE_METHODS son GET, HEAD, OPTIONS
-            return is_owner
-        
-        # Si es un usuario común intentando un PATCH, falla
+        # 3. NO-Admins NUNCA pueden listar o destruir.
+        if view.action == 'list' or view.action == 'destroy':
+            return False # 403 Prohibido
+
+        # 4. Para 'retrieve', 'update', 'partial_update' (acciones con 'pk')
+        if view.action in ['retrieve', 'update', 'partial_update']:
+            
+            # Obtenemos el PK de la URL
+            url_pk = view.kwargs.get('pk')
+            if not url_pk:
+                return False # No debería pasar, pero es seguro.
+
+            # Comparamos el PK de la URL con el PK del usuario logueado
+            # (Se castean a string para una comparación segura)
+            is_owner = (str(request.user.pk) == str(url_pk))
+
+            if not is_owner:
+                # ¡INTENTO DE ACCESO A OTRO USUARIO!
+                # (No importa si el PK 'url_pk' existe o no)
+                return False # 403 Prohibido
+            
+            # --- Si ES el dueño (is_owner es True) ---
+            
+            # Es el dueño, pero ¿qué rol tiene?
+            es_docente = EsDocente().has_permission(request, view)
+            es_coordinador = EsCoordinadorDeCarrera().has_permission(request, view)
+            
+            if es_docente or es_coordinador:
+                # Es un Docente o Coordinador editando/viendo su perfil.
+                return True
+            
+            # Si es un usuario común (Alumno, etc.)
+            # Replicamos la lógica original:
+            if request.method in permissions.SAFE_METHODS: # GET
+                return True # Puede VER su perfil
+            
+            return False # NO puede (PATCH) su perfil
+
+        # Cualquier otra acción personalizada se bloquea por defecto
         return False

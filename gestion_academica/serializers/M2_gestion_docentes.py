@@ -2,7 +2,6 @@
 
 from rest_framework import serializers
 from gestion_academica import models
-from gestion_academica.serializers.M3_designaciones_docentes import DesignacionSerializer
 
 
 class CaracterSerializer(serializers.ModelSerializer):
@@ -152,6 +151,8 @@ class DocenteDetalleSerializer(serializers.ModelSerializer):
 
     def get_designaciones(self, obj):
         """Devuelve designaciones actuales e históricas del docente."""
+        from gestion_academica.serializers.M3_designaciones_docentes import DesignacionSerializer
+
         designaciones_qs = models.Designacion.objects.filter(docente=obj)
 
         actuales = designaciones_qs.filter(fecha_fin__isnull=True)

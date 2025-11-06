@@ -109,8 +109,27 @@ class UsuarioSerializer(BaseUsuarioSerializer):
         roles_data = validated_data.pop('roles', [])
         validated_data.pop('old_password', None)
         validated_data.pop('password2', None)
-    
-        usuario = models.Usuario.objects.create_user(
+
+        # 1. Comprobamos si el rol "Coordinador" está en los roles ingresados
+        es_coordinador = any(
+            rol.nombre.lower() == 'coordinador' for rol in roles_data
+        )
+
+        es_docente = any(
+            rol.nombre.lower() == 'docente' for rol in roles_data
+        )
+
+        if es_coordinador:
+            # Si es Coordinador, creamos un objeto Coordinador (Source 4)
+            model_manager = models.Coordinador.objects
+        elif es_docente:
+            # Si es Docente, creamos un objeto Docente
+            model_manager = models.Docente.objects
+        else:
+            # Si no, creamos un Usuario (Source 4) normal
+            model_manager = models.Usuario.objects
+
+        usuario = model_manager.create_user(
             username=validated_data['username'],
             password=validated_data['password'],
             first_name=validated_data['first_name'],
@@ -145,3 +164,20 @@ class UsuarioSerializer(BaseUsuarioSerializer):
             instance.roles.set(roles_data)
         
         return instance
+    
+    def to_representation(self, instance):
+        """
+        Sobrescribe la salida del serializer.
+        Oculta 'carreras_coordinadas' si el usuario no es un Coordinador.
+        """
+        # 1. Obtiene la representación de datos estándar (diccionario)
+        data = super().to_representation(instance)
+        
+        # 2. Comprueba si el usuario (instance) tiene el atributo 'coordinador'
+        #    (Esto es más fiable que comprobar el rol aquí)
+        if not hasattr(instance, 'coordinador'):
+            # 3. Si NO es coordinador, quita el campo del diccionario
+            data.pop('carreras_coordinadas', None)
+        
+        # 4. Devuelve el diccionario modificado
+        return data

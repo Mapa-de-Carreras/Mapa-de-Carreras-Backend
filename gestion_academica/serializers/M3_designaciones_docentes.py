@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from gestion_academica import models
 from gestion_academica.serializers.M1_gestion_academica import AsignaturaSerializer
+from gestion_academica.serializers.M2_gestion_docentes import DocenteSerializer, ParametrosRegimenSerializer
 
 
 User = get_user_model()
@@ -33,20 +34,31 @@ class CargoSerializer(serializers.ModelSerializer):
 
 
 class DesignacionSerializer(serializers.ModelSerializer):
-    docente = serializers.PrimaryKeyRelatedField(
-        queryset=models.Docente.objects.all()
+    docente_id = serializers.PrimaryKeyRelatedField(
+        source="docente",
+        queryset=models.Docente.objects.all(),
+        write_only=True,
+        required=True
     )
 
-    comision = serializers.PrimaryKeyRelatedField(
-        queryset=models.Comision.objects.all()
+    comision_id = serializers.PrimaryKeyRelatedField(
+        source="comision",
+        queryset=models.Comision.objects.all(),
+        write_only=True,
+        required=True
     )
 
-    cargo = serializers.PrimaryKeyRelatedField(
-        queryset=models.Cargo.objects.all()
+    cargo_id = serializers.PrimaryKeyRelatedField(
+        source="cargo",
+        queryset=models.Cargo.objects.all(),
+        write_only=True,
+        required=True
     )
 
-    documento = serializers.PrimaryKeyRelatedField(
+    documento_id = serializers.PrimaryKeyRelatedField(
+        source="documento",
         queryset=models.Documento.objects.all(),
+        write_only=True,
         required=False,
         allow_null=True
     )
@@ -78,11 +90,17 @@ class DesignacionSerializer(serializers.ModelSerializer):
         allow_null=True
     )
 
+    docente = DocenteSerializer(read_only=True)
+    comision = ComisionSerializer(read_only=True)
+    regimen = ParametrosRegimenSerializer(read_only=True)
+    cargo = CargoSerializer(read_only=True)
+
     class Meta:
         model = models.Designacion
         fields = [
             "id", "fecha_inicio", "fecha_fin", "tipo_designacion",
-            "docente", "comision", "regimen", "regimen_id", "cargo", "observacion", "documento",
+            "docente", "docente_id", "comision", "comision_id",
+            "regimen", "regimen_id", "cargo", "cargo_id", "observacion", "documento", "documento_id",
             "dedicacion_id", "modalidad_id", "creado_por", "created_at",
             "updated_at"
         ]

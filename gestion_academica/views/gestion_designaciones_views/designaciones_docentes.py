@@ -1,4 +1,4 @@
-# gestion_academica/views/M3_designaciones_docentes.py
+# gestion_academica/views/designaciones_docentes.py
 
 from rest_framework import status, viewsets
 from rest_framework.response import Response
@@ -54,23 +54,6 @@ class DesignacionViewSet(viewsets.ModelViewSet):
             return None
         except Exception:
             return None
-
-    def _asignatura_tiene_cargo_primary_si_excluyo(self, comision, excluir_designacion_pk=None):
-        """
-        Verifica si la asignatura asociada a 'comision' seguirá teniendo al menos
-        una designación activa con cargo en PRIMARY_CARGOS si excluimos la designación
-        con pk = excluir_designacion_pk (útil antes de cerrar/eliminar).
-        """
-        asignatura = comision.asignatura
-        qs = models.Designacion.objects.filter(
-            comision__asignatura=asignatura,
-            fecha_fin__isnull=True
-        )
-        if excluir_designacion_pk:
-            qs = qs.exclude(pk=excluir_designacion_pk)
-
-        # comprobar existencia de al menos una designación activa con cargo primario
-        return qs.filter(cargo__nombre__in=self.PRIMARY_CARGOS).exists()
 
     def list(self, request, *args, **kwargs):
         """
@@ -185,107 +168,124 @@ class DesignacionViewSet(viewsets.ModelViewSet):
 
         return Response(out, status=status.HTTP_201_CREATED)
 
-    def _actualizar_designacion(self, request, partial=False):
-        """
-        Logica para actualizar una designacion
-        """
-        user = request.user
-        self._ensure_manage_permission(user)
+    # def _asignatura_tiene_cargo_primary_si_excluyo(self, comision, excluir_designacion_pk=None):
+    #     """
+    #     Verifica si la asignatura asociada a 'comision' seguirá teniendo al menos
+    #     una designación activa con cargo en PRIMARY_CARGOS si excluimos la designación
+    #     con pk = excluir_designacion_pk (útil antes de cerrar/eliminar).
+    #     """
+    #     asignatura = comision.asignatura
+    #     qs = models.Designacion.objects.filter(
+    #         comision__asignatura=asignatura,
+    #         fecha_fin__isnull=True
+    #     )
+    #     if excluir_designacion_pk:
+    #         qs = qs.exclude(pk=excluir_designacion_pk)
 
-        instance = self.get_object()
-        data = request.data.copy()
-        serializer = self.get_serializer(instance, data=data, partial=partial)
-        serializer.is_valid(raise_exception=True)
+    #     # comprobar existencia de al menos una designación activa con cargo primario
+    #     return qs.filter(cargo__nombre__in=self.PRIMARY_CARGOS).exists()
 
-        docente = serializer.validated_data.get("docente", instance.docente)
-        comision = serializer.validated_data.get("comision", instance.comision)
-        cargo = serializer.validated_data.get("cargo", instance.cargo)
-        fecha_inicio = serializer.validated_data.get(
-            "fecha_inicio", instance.fecha_inicio)
-        fecha_fin = serializer.validated_data.get(
-            "fecha_fin", instance.fecha_fin)
+    # def _actualizar_designacion(self, request, partial=False):
+    #     """
+    #     Logica para actualizar una designacion
+    #     """
+    #     user = request.user
+    #     self._ensure_manage_permission(user)
 
-        # evitar duplicado/solapamiento en misma comisión
-        qs_misma_comision = models.Designacion.objects.filter(
-            docente=docente, comision=comision).exclude(pk=instance.pk)
-        for d in qs_misma_comision:
-            if self._periodos_solapan(d.fecha_inicio, d.fecha_fin, fecha_inicio, fecha_fin):
-                return Response({"detail": "Solapamiento detectado con otra designación en la misma comisión."},
-                                status=status.HTTP_400_BAD_REQUEST)
+    #     instance = self.get_object()
+    #     data = request.data.copy()
+    #     serializer = self.get_serializer(instance, data=data, partial=partial)
+    #     serializer.is_valid(raise_exception=True)
 
-        # evitar solapamiento de cargo (excluyendo esta instancia)
-        qs_cargo = models.Designacion.objects.filter(
-            docente=docente, cargo=cargo).exclude(pk=instance.pk)
-        for d in qs_cargo:
-            if self._periodos_solapan(d.fecha_inicio, d.fecha_fin, fecha_inicio, fecha_fin):
-                return Response({"detail": f"Solapamiento detectado para el cargo '{cargo.nombre}'."},
-                                status=status.HTTP_400_BAD_REQUEST)
+    #     docente = serializer.validated_data.get("docente", instance.docente)
+    #     comision = serializer.validated_data.get("comision", instance.comision)
+    #     cargo = serializer.validated_data.get("cargo", instance.cargo)
+    #     fecha_inicio = serializer.validated_data.get(
+    #         "fecha_inicio", instance.fecha_inicio)
+    #     fecha_fin = serializer.validated_data.get(
+    #         "fecha_fin", instance.fecha_fin)
 
-        # si no se envia el regimen, se mantiene
-        dedicacion_obj = serializer.validated_data.get(
-            "dedicacion", getattr(instance, "dedicacion", None))
-        modalidad_obj = serializer.validated_data.get(
-            "modalidad", getattr(instance, "modalidad", None))
-        regimen_obj = serializer.validated_data.get(
-            "regimen", getattr(instance, "regimen", None))
+    #     # evitar duplicado/solapamiento en misma comisión
+    #     qs_misma_comision = models.Designacion.objects.filter(
+    #         docente=docente, comision=comision).exclude(pk=instance.pk)
+    #     for d in qs_misma_comision:
+    #         if self._periodos_solapan(d.fecha_inicio, d.fecha_fin, fecha_inicio, fecha_fin):
+    #             return Response({"detail": "Solapamiento detectado con otra designación en la misma comisión."},
+    #                             status=status.HTTP_400_BAD_REQUEST)
 
-        if regimen_obj is None:
-            regimen_obj = self._buscar_regimen_activo(
-                modalidad_obj, dedicacion_obj)
-            if regimen_obj is None:
-                return Response({"detail": "No existe un parámetro de régimen activo para la modalidad/dedicación indicada."},
-                                status=status.HTTP_400_BAD_REQUEST)
+    #     # evitar solapamiento de cargo (excluyendo esta instancia)
+    #     qs_cargo = models.Designacion.objects.filter(
+    #         docente=docente, cargo=cargo).exclude(pk=instance.pk)
+    #     for d in qs_cargo:
+    #         if self._periodos_solapan(d.fecha_inicio, d.fecha_fin, fecha_inicio, fecha_fin):
+    #             return Response({"detail": f"Solapamiento detectado para el cargo '{cargo.nombre}'."},
+    #                             status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            with transaction.atomic():
-                updated = serializer.save(regimen=regimen_obj)
-        except IntegrityError as e:
-            return Response({"detail": f"Error de base de datos: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({"detail": f"Error del servidor: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    #     # si no se envia el regimen, se mantiene
+    #     dedicacion_obj = serializer.validated_data.get(
+    #         "dedicacion", getattr(instance, "dedicacion", None))
+    #     modalidad_obj = serializer.validated_data.get(
+    #         "modalidad", getattr(instance, "modalidad", None))
+    #     regimen_obj = serializer.validated_data.get(
+    #         "regimen", getattr(instance, "regimen", None))
 
-        return Response(self.get_serializer(updated).data, status=status.HTTP_200_OK)
+    #     if regimen_obj is None:
+    #         regimen_obj = self._buscar_regimen_activo(
+    #             modalidad_obj, dedicacion_obj)
+    #         if regimen_obj is None:
+    #             return Response({"detail": "No existe un parámetro de régimen activo para la modalidad/dedicación indicada."},
+    #                             status=status.HTTP_400_BAD_REQUEST)
 
-    def update(self, request, *args, **kwargs):
-        """
-        Permite actualizar una designacion
-        """
-        return self._actualizar_designacion(request, partial=False)
+    #     try:
+    #         with transaction.atomic():
+    #             updated = serializer.save(regimen=regimen_obj)
+    #     except IntegrityError as e:
+    #         return Response({"detail": f"Error de base de datos: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+    #     except Exception as e:
+    #         return Response({"detail": f"Error del servidor: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    def partial_update(self, request, *args, **kwargs):
-        """
-        Permite actualizar parcialmente una designacion
-        """
-        return self._actualizar_designacion(request, partial=True)
+    #     return Response(self.get_serializer(updated).data, status=status.HTTP_200_OK)
 
-    def destroy(self, request, *args, **kwargs):
-        """
-        No hacemos hard delete para conservar historial.
-        Implementación: si fecha_fin es NULL -> la cerramos poniendo fecha_fin = today().
-        Si ya tiene fecha_fin -> devolvemos 400 indicando que ya está finalizada.
-        """
-        user = request.user
-        self._ensure_manage_permission(user)
+    # def update(self, request, *args, **kwargs):
+    #     """
+    #     Permite actualizar una designacion
+    #     """
+    #     return self._actualizar_designacion(request, partial=False)
 
-        instance = self.get_object()
-        if instance.fecha_fin is not None:
-            return Response({"detail": "La designación ya tiene fecha de fin (ya finalizada)."},
-                            status=status.HTTP_400_BAD_REQUEST)
+    # def partial_update(self, request, *args, **kwargs):
+    #     """
+    #     Permite actualizar parcialmente una designacion
+    #     """
+    #     return self._actualizar_designacion(request, partial=True)
 
-        # verificar que al cerrar esta designación la asignatura mantenga al menos un cargo primario
-        if not self._asignatura_tiene_cargo_primary_si_excluyo(instance.comision, excluir_designacion_pk=instance.pk):
-            return Response(
-                {"detail": "No es posible finalizar esta designación: dejaría a la asignatura sin ningún docente con cargo Titular/Asociado/Adjunto."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+    # def destroy(self, request, *args, **kwargs):
+    #     """
+    #     No hacemos hard delete para conservar historial.
+    #     Implementación: si fecha_fin es NULL -> la cerramos poniendo fecha_fin = today().
+    #     Si ya tiene fecha_fin -> devolvemos 400 indicando que ya está finalizada.
+    #     """
+    #     user = request.user
+    #     self._ensure_manage_permission(user)
 
-        try:
-            with transaction.atomic():
-                instance.fecha_fin = date.today()
-                instance.save()
-        except IntegrityError as e:
-            return Response({"detail": f"Error de base de datos: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({"detail": f"Error inesperado: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    #     instance = self.get_object()
+    #     if instance.fecha_fin is not None:
+    #         return Response({"detail": "La designación ya tiene fecha de fin (ya finalizada)."},
+    #                         status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({"detail": "Designación finalizada correctamente (fecha_fin establecida)."}, status=status.HTTP_200_OK)
+    #     # verificar que al cerrar esta designación la asignatura mantenga al menos un cargo primario
+    #     if not self._asignatura_tiene_cargo_primary_si_excluyo(instance.comision, excluir_designacion_pk=instance.pk):
+    #         return Response(
+    #             {"detail": "No es posible finalizar esta designación: dejaría a la asignatura sin ningún docente con cargo Titular/Asociado/Adjunto."},
+    #             status=status.HTTP_400_BAD_REQUEST
+    #         )
+
+    #     try:
+    #         with transaction.atomic():
+    #             instance.fecha_fin = date.today()
+    #             instance.save()
+    #     except IntegrityError as e:
+    #         return Response({"detail": f"Error de base de datos: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+    #     except Exception as e:
+    #         return Response({"detail": f"Error inesperado: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    #     return Response({"detail": "Designación finalizada correctamente (fecha_fin establecida)."}, status=status.HTTP_200_OK)

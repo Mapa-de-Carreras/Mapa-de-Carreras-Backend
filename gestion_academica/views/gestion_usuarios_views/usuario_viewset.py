@@ -1,11 +1,12 @@
+from django.http import Http404
 from rest_framework import viewsets, mixins
 # Permisos
-from gestion_academica.permissions.admin_permissions import EsAdministrador 
-from ...permissions.editar_usuario_permissions import UsuarioViewSetPermission
+from gestion_academica.permissions import EsAdministrador, EsCoordinadorDeCarrera, EsDocente, UsuarioViewSetPermission
 # Modelos
-from gestion_academica.models.M4_gestion_usuarios_autenticacion import Usuario
+from gestion_academica.models.M4_gestion_usuarios_autenticacion import Usuario, Coordinador
+from gestion_academica.models.M2_gestion_docentes import Docente
 # Serializers
-from ...serializers import UsuarioSerializer, EditarUsuarioSerializer
+from ...serializers import UsuarioSerializer, EditarDocenteSerializer, EditarCoordinadorSerializer, EditarUsuarioSerializer
 # Importaciones para realizar el filtrado de usuarios deshabilitados
 from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
@@ -70,14 +71,79 @@ class UsuarioViewSet(mixins.ListModelMixin,
     
     def get_serializer_class(self):
         """
-        Devuelve un serializer diferente según quién esté editando.
+        Devuelve un serializer diferente basado en el ROL del usuario.
         """
-        # Si es Admin (usando la lógica de EsAdministrador ), usa el serializer completo
+        usuario_que_pide = self.request.user
+
+        # --- 1. LÓGICA DEL ADMINISTRADOR ---
         if EsAdministrador().has_permission(self.request, self):
-            return UsuarioSerializer
+            
+            if self.action == 'list' or self.action == 'create':
+                return UsuarioSerializer
+
+            # Para 'retrieve' (GET), 'update' (PATCH), etc.
+            try:
+                pk = self.kwargs.get('pk')
+                if not pk: return UsuarioSerializer
+
+                # Buscamos el usuario Y sus roles
+                usuario_a_editar = Usuario.objects.prefetch_related('roles').get(pk=pk)
+                
+                if usuario_a_editar.roles.filter(nombre__iexact="DOCENTE").exists():
+                    return EditarDocenteSerializer
+                
+                if usuario_a_editar.roles.filter(nombre__iexact="COORDINADOR").exists():
+                    return EditarCoordinadorSerializer
+                
+                return UsuarioSerializer
+
+            except Usuario.DoesNotExist:
+                return UsuarioSerializer 
+            except Exception:
+                return UsuarioSerializer 
+
+        # --- 2. LÓGICA DEL USUARIO NORMAL (NO ADMIN) ---
+        if usuario_que_pide.roles.filter(nombre__iexact="COORDINADOR").exists():
+            return EditarCoordinadorSerializer
         
-        # Si es otro rol (Docente/Coordinador), usa el limitado
+        if usuario_que_pide.roles.filter(nombre__iexact="DOCENTE").exists():
+            return EditarDocenteSerializer
+        
         return EditarUsuarioSerializer
+    
+    def get_object(self):
+        """
+        Sobrescribe get_object para devolver la instancia del modelo
+        hijo (Docente, Coordinador) si el serializer lo requiere,
+        en lugar del modelo padre (Usuario).
+        """
+        pk = self.kwargs.get('pk')
+        
+        # Obtenemos la *clase* de serializer que se va a usar
+        serializer_class = self.get_serializer_class()
+        
+        # 1. Si el serializer es el de Docente...
+        if serializer_class == EditarDocenteSerializer:
+            try:
+                # ...buscamos y devolvemos el objeto Docente.
+                return Docente.objects.get(pk=pk) # Usa tu import de Docente
+            except Docente.DoesNotExist:
+                raise Http404("No se encontró el Docente.")
+
+        # 2. Si el serializer es el de Coordinador...
+        if serializer_class == EditarCoordinadorSerializer:
+            try:
+                # ...buscamos y devolvemos el objeto Coordinador.
+                return Coordinador.objects.get(pk=pk) # Usa tu import de Coordinador
+            except Coordinador.DoesNotExist:
+                raise Http404("No se encontró el Coordinador.")
+                
+        # 3. Para cualquier otro caso (Admin, Alumno)...
+        try:
+            # ...devolvemos el objeto Usuario base.
+            return Usuario.objects.get(pk=pk)
+        except Usuario.DoesNotExist:
+            raise Http404("No se encontró el Usuario.")
     
     @swagger_auto_schema(
         request_body=UsuarioSerializer 

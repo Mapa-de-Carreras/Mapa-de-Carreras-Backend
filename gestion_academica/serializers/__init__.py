@@ -1,3 +1,3 @@
 from .auth_serializers import ActivarCuentaSerializer, EnviarCodigoVerificacionSerializer, RecuperarUsuarioSerializer, RestablecerContraseñaSerializer
-from .user_serializers import UsuarioSerializer, EditarUsuarioSerializer
+from .user_serializers import UsuarioSerializer, EditarCoordinadorSerializer, EditarDocenteSerializer, EditarUsuarioSerializer
 from .M1_gestion_academica import InstitutoSerializer

@@ -5,9 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status, permissions
 from drf_yasg.utils import swagger_auto_schema
 
-from gestion_academica.serializers.M1_gestion_academica import (
-    PlanDeEstudioSerializer, PlanDeEstudioCreateUpdateSerializer,PlanDeEstudioVigenciaSerializer
-)
+from gestion_academica.serializers import PlanDeEstudioSerializerList,PlanDeEstudioSerializerDetail,PlanDeEstudioCreateUpdateSerializer,PlanDeEstudioVigenciaSerializer
 from gestion_academica.services import plan_de_estudio_service
 #from gestion_academica.permissions.roles_permisos import EsAdministrador, EsCoordinadorDeCarrera
 
@@ -24,16 +22,16 @@ class PlanDeEstudioListCreateView(APIView):
         tags=["Gestión Académica - Planes de Estudio"],
         operation_summary="Listar Planes de Estudio",
         operation_description="Obtiene la lista completa de planes registrados.",
-        responses={200: PlanDeEstudioSerializer(many=True)}
+        responses={200: PlanDeEstudioSerializerList(many=True)}
     )
     def get(self, request):
         planes = plan_de_estudio_service.listar_planes()
-        serializer = PlanDeEstudioSerializer(planes, many=True)
+        serializer = PlanDeEstudioSerializerList(planes, many=True)
         return Response(serializer.data,status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         request_body=PlanDeEstudioCreateUpdateSerializer,
-        responses={201: PlanDeEstudioSerializer()},
+        responses={201: PlanDeEstudioSerializerList()},
         operation_description="Permite que un administrador o Coordinador de la carrera cree un nuevo plan de estudio ",
         tags=["Gestión Académica - Planes de Estudio"]
     )
@@ -43,7 +41,7 @@ class PlanDeEstudioListCreateView(APIView):
             plan = plan_de_estudio_service.crear_plan(serializer.validated_data, request.user)
             return Response({
                 "message": "Plan de estudio creado correctamente.",
-                "data": PlanDeEstudioSerializer(plan).data
+                "data": PlanDeEstudioSerializerList(plan).data
             }, status=status.HTTP_201_CREATED)
         return Response({
             "message": "Error al crear el plan de estudio.",
@@ -63,11 +61,11 @@ class PlanDeEstudioDetailView(APIView):
         tags=["Gestión Académica - Planes de Estudio"],
         operation_summary="Obtener Plan de Estudio",
         operation_description="Permite ver el detalle de un plan de estudio.",
-        responses={200: PlanDeEstudioSerializer()}
+        responses={200: PlanDeEstudioSerializerDetail()}
     )
     def get(self, request, pk):
         plan = plan_de_estudio_service.obtener_plan(pk)
-        serializer = PlanDeEstudioSerializer(plan)
+        serializer = PlanDeEstudioSerializerDetail(plan)
         return Response(serializer.data,status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
@@ -82,7 +80,7 @@ class PlanDeEstudioDetailView(APIView):
             plan = plan_de_estudio_service.actualizar_plan(pk, serializer.validated_data)
             return Response({
                 "message": "Plan de estudio actualizado correctamente.",
-                "data": PlanDeEstudioSerializer(plan).data
+                "data": PlanDeEstudioSerializerList(plan).data
             })
         return Response({
             "message": "Error al actualizar el plan de estudio.",
@@ -131,7 +129,7 @@ class PlanDeEstudioVigenciaView(APIView):
             plan_actualizado = plan_de_estudio_service.cambiar_vigencia(pk, serializer.validated_data["esta_vigente"])
             return Response({
                 "message": "Vigencia del plan actualizada correctamente.",
-                "data": PlanDeEstudioSerializer(plan_actualizado).data
+                "data": PlanDeEstudioSerializerList(plan_actualizado).data
             }, status=status.HTTP_200_OK)
 
         return Response({

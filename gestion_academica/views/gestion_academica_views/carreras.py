@@ -5,11 +5,9 @@ from rest_framework.permissions import AllowAny
 from gestion_academica.permissions import EsAdministrador, EsCoordinadorDeCarrera
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-
-from gestion_academica.serializers.M1_gestion_academica import CarreraSerializer,CarreraCreateUpdateSerializer,CarreraVigenciaUpdateSerializer
 from gestion_academica.services.gestion_academica import carreras as carrera_service
 
-
+from gestion_academica.serializers import CarreraSerializerList,CarreraSerializerDetail,CarreraCreateUpdateSerializer,CarreraVigenciaUpdateSerializer
 
 class CarreraListCreateView(APIView):
     """Listar o crear Carreras"""
@@ -42,7 +40,7 @@ class CarreraListCreateView(APIView):
             "Se puede filtrar opcionalmente por vigencia o por ID de instituto."
         ),
         manual_parameters=[filtro_vigentes, filtro_instituto],
-        responses={200: CarreraSerializer(many=True)}
+        responses={200: CarreraSerializerList(many=True)}
     )
     def get(self, request):
         # Obtenemos los parámetros de query
@@ -58,16 +56,7 @@ class CarreraListCreateView(APIView):
 
         # Consultamos el servicio
         carreras = carrera_service.listar_carreras(vigentes=vigentes, instituto_id=instituto_id)
-        serializer = CarreraSerializer(carreras, many=True)
-
-        # Mensaje intuitivo según el filtro
-        msg = "Listado de carreras obtenido correctamente."
-        if instituto_id and vigentes is not None:
-            msg = f"Listado de carreras {'vigentes' if vigentes else 'no vigentes'} del instituto {instituto_id}."
-        elif instituto_id:
-            msg = f"Listado de carreras del instituto {instituto_id}."
-        elif vigentes is not None:
-            msg = f"Listado de carreras {'vigentes' if vigentes else 'no vigentes'}."
+        serializer = CarreraSerializerList(carreras, many=True)
 
         return Response(serializer.data,status=status.HTTP_200_OK)
 
@@ -78,7 +67,7 @@ class CarreraListCreateView(APIView):
         operation_description="Permite al administrador registrar una nueva carrera universitaria.",
         request_body=CarreraCreateUpdateSerializer,
         responses={
-            201: openapi.Response("Carrera creada correctamente", CarreraSerializer),
+            201: openapi.Response("Carrera creada correctamente", CarreraCreateUpdateSerializer),
             400: "Error en los datos enviados"
         }
     )
@@ -92,7 +81,7 @@ class CarreraListCreateView(APIView):
             carrera = carrera_service.crear_carrera(serializer.validated_data)
             return Response({
                 "message": "Carrera creada correctamente.",
-                "data": CarreraSerializer(carrera).data
+                "data": CarreraSerializerList(carrera).data
             }, status=status.HTTP_201_CREATED)
         return Response({
             "message": "Error al crear la carrera.",
@@ -116,11 +105,11 @@ class CarreraDetailView(APIView):
         tags=["Gestión Académica - Carreras"],
         operation_summary="Obtener detalle de una Carrera",
         operation_description="Devuelve la información completa de una carrera específica, incluyendo el instituto al que pertenece.",
-        responses={200: CarreraSerializer()}
+        responses={200: CarreraSerializerDetail(many=True)}
     )
     def get(self, request, pk):
         carrera = carrera_service.obtener_carrera(pk)
-        serializer = CarreraSerializer(carrera)
+        serializer = CarreraSerializerDetail(carrera)
         return Response(serializer.data,status=status.HTTP_200_OK)
 
     # ------------------------------
@@ -133,7 +122,7 @@ class CarreraDetailView(APIView):
         operation_description="Permite al administrador o al coordinador (activo de la carrera correspondiente) actualizar los datos de una carrera existente.",
         request_body=CarreraCreateUpdateSerializer,
         responses={
-            200: openapi.Response("Carrera actualizada correctamente", CarreraSerializer),
+            200: openapi.Response("Carrera actualizada correctamente", CarreraSerializerList),
             400: "Error en los datos enviados"
         }
     )
@@ -147,7 +136,7 @@ class CarreraDetailView(APIView):
             carrera_actualizada = carrera_service.actualizar_carrera(pk, serializer.validated_data)
             return Response({
                 "message": "Carrera actualizada correctamente.",
-                "data": CarreraSerializer(carrera_actualizada).data
+                "data": CarreraSerializerList(carrera_actualizada).data
             })
         return Response({
             "message": "Error al actualizar la carrera.",
@@ -203,7 +192,7 @@ class CarreraVigenciaUpdateView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        serializer = CarreraSerializer(carrera, data=request.data, partial=True)
+        serializer = CarreraSerializerList(carrera, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             estado = "activada" if serializer.validated_data["esta_vigente"] else "desactivada"

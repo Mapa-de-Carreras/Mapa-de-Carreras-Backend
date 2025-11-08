@@ -5,11 +5,9 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 
 from gestion_academica import models
-from gestion_academica.serializers.M1_gestion_academica import (
-    InstitutoSerializer, CarreraSerializer, ResolucionSerializer,
-    AsignaturaSerializer, DocumentoSerializer, PlanAsignaturaSerializer,
-    PlanDeEstudioSerializer, CorrelativaSerializer
-)
+
+from gestion_academica.serializers.gestion_academica_serializer import *
+
 from gestion_academica.serializers.M2_gestion_docentes import (
     CaracterSerializer, ModalidadSerializer, DedicacionSerializer,
     ParametrosRegimenSerializer, DocenteSerializer
@@ -70,7 +68,7 @@ class SerializersIntegrationTests(TestCase):
         inst = s.save()
         self.assertEqual(inst.codigo, "INS1")
 
-        cs = CarreraSerializer(
+        cs = CarreraSerializerList(
             data={"codigo": "C1", "nombre": "Carrera 1", "nivel": "GRADO", "instituto_id": inst.id})
         self.assertTrue(cs.is_valid(), cs.errors)
         carrera = cs.save()

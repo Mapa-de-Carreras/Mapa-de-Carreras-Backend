@@ -3,7 +3,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from gestion_academica import models
-from gestion_academica.serializers.M1_gestion_academica import AsignaturaSerializer
+from gestion_academica.serializers.gestion_academica_serializer.M1_gestion_academica import AsignaturaSerializer
 
 
 User = get_user_model()

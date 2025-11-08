@@ -18,7 +18,7 @@ class Comision(models.Model):
         ('VESPERTINO', 'Vespertino'),
     ]
 
-    nombre = models.CharField(max_length=50)  # por ejemplo: comision A
+    nombre = models.CharField(max_length=50)
     turno = models.CharField(
         max_length=20, choices=TURNO_CHOICES, db_index=True)
     promocionable = models.BooleanField(default=False)

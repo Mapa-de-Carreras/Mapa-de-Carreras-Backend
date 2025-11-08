@@ -5,3 +5,4 @@ from .cambiar_contrasena_view import CambiarContrasenaView
 from .usuario_viewset import UsuarioViewSet
 from .editar_usuario_view import EditarUsuarioView
 from .gestion_academica_views import *
+from .designaciones_docentes_views import *

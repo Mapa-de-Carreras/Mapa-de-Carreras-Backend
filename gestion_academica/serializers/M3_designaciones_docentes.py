@@ -3,27 +3,44 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from gestion_academica import models
-from gestion_academica.serializers.gestion_academica_serializer.M1_gestion_academica import AsignaturaSerializer
+
 
 
 User = get_user_model()
 
 
 class ComisionSerializer(serializers.ModelSerializer):
-    asignatura = AsignaturaSerializer(read_only=True)
-    # asignatura = serializers.PrimaryKeyRelatedField(read_only=True)
-    asignatura_id = serializers.PrimaryKeyRelatedField(
-        source="asignatura",
-        write_only=True,
-        queryset=models.Asignatura.objects.all()
-    )
+    asignatura_nombre = serializers.CharField(source="asignatura.nombre", read_only=True)
 
     class Meta:
         model = models.Comision
         fields = [
-            "id", "nombre", "turno", "promocionable",
-            "activo", "asignatura", "asignatura_id"
+            "id", "nombre", "turno", "promocionable", "activo",
+            "asignatura", "asignatura_nombre"
         ]
+        read_only_fields = ["id", "asignatura_nombre"]
+
+
+class ComisionCreateUpdateSerializer(serializers.ModelSerializer):
+    asignatura_id = serializers.PrimaryKeyRelatedField(
+        source="asignatura", queryset=models.Asignatura.objects.all(), write_only=True
+    )
+
+    class Meta:
+        model = models.Comision
+        fields = ["nombre", "turno", "promocionable", "activo", "asignatura_id"]
+
+    def validate(self, data):
+        asignatura = data.get("asignatura") or getattr(self.instance, "asignatura", None)
+        nombre = data.get("nombre") or getattr(self.instance, "nombre", None)
+
+        if models.Comision.objects.filter(
+            asignatura=asignatura, nombre__iexact=nombre
+        ).exclude(id=self.instance.id if self.instance else None).exists():
+            raise serializers.ValidationError(
+                f"Ya existe una comisión llamada '{nombre}' para esta asignatura."
+            )
+        return data
 
 
 class CargoSerializer(serializers.ModelSerializer):

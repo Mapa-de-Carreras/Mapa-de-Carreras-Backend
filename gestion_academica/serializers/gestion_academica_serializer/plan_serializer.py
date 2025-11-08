@@ -1,23 +1,97 @@
 
 from rest_framework import serializers
-from gestion_academica.models import PlanDeEstudio,Resolucion,PlanAsignatura,Carrera,Documento,Asignatura
+from gestion_academica.models import PlanDeEstudio,Resolucion,PlanAsignatura,Carrera,Documento,Asignatura,Correlativa
 from .asignatura_serializer import AsignaturaSerializer
 
 
+
 class PlanAsignaturaSerializer(serializers.ModelSerializer):
-    asignatura = AsignaturaSerializer(read_only=True)
+    plan_id = serializers.PrimaryKeyRelatedField(
+        source="plan_de_estudio", queryset=PlanDeEstudio.objects.all(), write_only=True
+    )
     asignatura_id = serializers.PrimaryKeyRelatedField(
-        source="asignatura",
-        queryset=Asignatura.objects.all(),
-        write_only=True
+        source="asignatura", queryset=Asignatura.objects.all(), write_only=True
     )
 
     class Meta:
         model = PlanAsignatura
+        fields = ["id", "plan_id", "asignatura_id", "anio", "created_at", "updated_at"]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    def validate(self, data):
+        plan = data.get("plan_de_estudio")
+        asignatura = data.get("asignatura")
+
+        if not asignatura.activo:
+            raise serializers.ValidationError(
+                "No se puede asociar una asignatura inactiva al plan de estudio."
+            )
+
+        if PlanAsignatura.objects.filter(plan_de_estudio=plan, asignatura=asignatura).exists():
+            raise serializers.ValidationError(
+                "Esta asignatura ya está asociada a este plan de estudio."
+            )
+
+        return data
+
+class CorrelativaSerializer(serializers.ModelSerializer):
+    asignatura_origen = serializers.CharField(source="plan_asignatura.asignatura.nombre", read_only=True)
+    asignatura_requerida = serializers.CharField(source="correlativa_requerida.asignatura.nombre", read_only=True)
+    anio_asignatura = serializers.IntegerField(source="plan_asignatura.anio", read_only=True)
+    anio_requerida = serializers.IntegerField(source="correlativa_requerida.anio", read_only=True)
+
+    class Meta:
+        model = Correlativa
         fields = [
-            "id", "plan_de_estudio", "asignatura", "asignatura_id",
-            "anio", "created_at", "updated_at"
+            "id",
+            "plan_asignatura",
+            "correlativa_requerida",
+            "asignatura_origen",
+            "asignatura_requerida",
+            "anio_asignatura",
+            "anio_requerida",
         ]
+    
+class CorrelativaCreateSerializer(serializers.ModelSerializer):
+    plan_asignatura_id = serializers.PrimaryKeyRelatedField(
+        source="plan_asignatura",
+        queryset=PlanAsignatura.objects.all(),
+        write_only=True
+    )
+    correlativa_requerida_id = serializers.PrimaryKeyRelatedField(
+        source="correlativa_requerida",
+        queryset=PlanAsignatura.objects.all(),
+        write_only=True
+    )
+
+    class Meta:
+        model = Correlativa
+        fields = ["plan_asignatura_id", "correlativa_requerida_id"]
+
+    def validate(self, data):
+        plan_asignatura = data["plan_asignatura"]
+        correlativa_requerida = data["correlativa_requerida"]
+
+        # Regla 1: misma plan de estudio
+        if plan_asignatura.plan_de_estudio_id != correlativa_requerida.plan_de_estudio_id:
+            raise serializers.ValidationError(
+                "Las correlativas deben pertenecer al mismo plan de estudio."
+            )
+
+        # Regla 2: no puede ser correlativa de sí misma
+        if plan_asignatura == correlativa_requerida:
+            raise serializers.ValidationError(
+                "Una asignatura no puede ser correlativa de sí misma."
+            )
+
+        # Regla 3: no puede ser correlativa de una del mismo año y cuatrimestre
+        if (plan_asignatura.anio == correlativa_requerida.anio and
+            plan_asignatura.asignatura.cuatrimestre == correlativa_requerida.asignatura.cuatrimestre):
+            raise serializers.ValidationError(
+                "No se pueden establecer correlativas entre asignaturas del mismo año y cuatrimestre."
+            )
+
+        return data
 
 
 class PlanDeEstudioSerializerList(serializers.ModelSerializer):

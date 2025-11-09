@@ -127,8 +127,8 @@ class CarreraCoordinacion(models.Model):
     """
     carrera = models.ForeignKey(Carrera, on_delete=models.CASCADE)
     coordinador = models.ForeignKey("Coordinador", on_delete=models.CASCADE)
-    fecha_inicio = models.DateField(default=timezone.now)
-    fecha_fin = models.DateField(null=True, blank=True)
+    fecha_inicio = models.DateTimeField(default=timezone.now)
+    fecha_fin = models.DateTimeField(null=True, blank=True)
     activo = models.BooleanField(default=True)
 
     creado_por = models.ForeignKey(Usuario, on_delete=models.SET_NULL,
@@ -146,13 +146,19 @@ class CarreraCoordinacion(models.Model):
         return f"{self.coordinador} - {self.carrera} ({'activo' if self.activo else 'inactivo'})"
 
 
-class Coordinador(Usuario):
+class Coordinador(models.Model):
     """
     Modelo para el Coordinador. Hereda todos los campos de Usuario
     y añade la relación con las carreras que coordina.
     """
+    usuario = models.OneToOneField(
+        Usuario,
+        on_delete=models.CASCADE,
+        related_name="coordinador"
+    )
     carreras_coordinadas = models.ManyToManyField(
         "gestion_academica.Carrera", through=CarreraCoordinacion, related_name='coordinadores')
+    activo = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"{self.last_name} {self.first_name}"
+        return f"{self.usuario.last_name} {self.usuario.first_name}"

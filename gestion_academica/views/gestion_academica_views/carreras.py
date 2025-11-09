@@ -217,3 +217,33 @@ class CarreraVigenciaUpdateView(APIView):
             "errors": serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
 
+from rest_framework import viewsets
+from gestion_academica import models
+from gestion_academica.serializers import CarreraCoordinacionSerializer
+# Importamos tu permiso de admin real
+from gestion_academica.permissions.admin_permissions import EsAdministrador
+
+class CarreraCoordinacionViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para que un Administrador gestione (CRUD) 
+    las asignaciones de historial de 'CarreraCoordinacion'.
+    
+    Esta vista es para gestión manual. Los coordinadores 
+    gestionan sus carreras activas a través de su propio 
+    perfil (EditarCoordinadorSerializer).
+    """
+    queryset = models.CarreraCoordinacion.objects.all().order_by('-fecha_inicio')
+    serializer_class = CarreraCoordinacionSerializer
+    
+    # Solo los Admins pueden gestionar el historial directamente
+    permission_classes = [EsAdministrador]
+
+    def perform_create(self, serializer):
+        """
+        Asigna automáticamente el usuario (admin) que crea la asignación,
+        si el 'creado_por_id' no fue enviado en el request.
+        """
+        if 'creado_por' not in serializer.validated_data:
+            serializer.save(creado_por=self.request.user)
+        else:
+            serializer.save()

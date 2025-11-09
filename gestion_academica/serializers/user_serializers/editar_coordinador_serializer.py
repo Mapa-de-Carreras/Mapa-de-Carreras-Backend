@@ -19,60 +19,46 @@ class EditarCoordinadorSerializer(BaseUsuarioSerializer):
     # Este es el "Picker" para el frontend.
     # Acepta una lista de IDs de Carreras: [1, 2, 5]
     carreras_asignadas_ids = serializers.PrimaryKeyRelatedField(
-        queryset=models.Carrera.objects.all(), # (Source 5)
+        queryset=models.Carrera.objects.all(),
         many=True,
         write_only=True,
         required=False,
     )
 
     class Meta:
-        model = models.Usuario
+        model = models.Coordinador
         # Campos del Usuario (Source 4) que puede editar (de EditarUsuarioSerializer (Source 6))
         fields = [
-            'first_name', 'last_name', 'username', 'email', 'celular', 'fecha_nacimiento',
-            # Los nuevos campos para las carreras
-            'carreras_coordinadas', 'carreras_asignadas_ids'
+            'id', 'usuario_id', 'carreras_coordinadas', 'carreras_asignadas_ids'
         ]
+        read_only_fields = ['id', 'usuario_id']
         extra_kwargs = {
             'fecha_nacimiento': {'required': False},
         }
 
     def get_carreras_coordinadas(self, obj):
         """
-        Muestra solo las carreras que el Coordinador tiene ACTIVAS.
+        'obj' es el perfil Coordinador.
+        Muestra solo las carreras que tiene ACTIVAS.
         """
-        if hasattr(obj, 'coordinador'): # (Source 4)
-            carreras_activas = obj.coordinador.carreras_coordinadas.filter(
-                carreracoordinacion__activo=True # (Source 4)
-            )
-            return CarreraSerializer(carreras_activas, many=True).data
-        return []
+        carreras_activas = obj.carreras_coordinadas.filter(
+            carreracoordinacion__activo=True
+        )
+        return CarreraSerializer(carreras_activas, many=True).data
 
     def update(self, instance, validated_data):
-        # 'instance' es el objeto Usuario (Source 4)
-        
-        # 1. Obtenemos el objeto Coordinador (Source 4)
-        try:
-            coordinador_obj = instance.coordinador
-        except models.Coordinador.DoesNotExist:
-            # Si no es un coordinador, solo guardamos los datos del usuario
-            # y no hacemos nada con las carreras.
-            validated_data.pop('carreras_asignadas_ids', None) # Quitamos el campo de carreras
-            return super().update(instance, validated_data)
+        # 1. Obtenemos el objeto Coordinador
+        coordinador_obj = instance
 
         # 2. Extraemos la lista de carreras del "picker"
-        # Si el frontend no envía 'carreras_asignadas_ids', no tocamos el historial
+        # Si el frontend no envía 'carreras_asignadas_ids', no tocamos nada
         if 'carreras_asignadas_ids' not in validated_data:
-            return super().update(instance, validated_data)
+            return instance
             
         nuevas_carreras = validated_data.pop('carreras_asignadas_ids')
         nuevas_carreras_ids = set(carrera.id for carrera in nuevas_carreras)
 
-        # 3. Guardamos los campos del usuario (first_name, email, etc.)
-        instance = super().update(instance, validated_data)
-
         # --- 4. LÓGICA DE HISTORIAL (La parte importante) ---
-        
         # Obtenemos las asignaciones activas actuales
         asignaciones_actuales = models.CarreraCoordinacion.objects.filter(
             coordinador=coordinador_obj,

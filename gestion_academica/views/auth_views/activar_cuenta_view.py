@@ -3,7 +3,7 @@
 from rest_framework import status, views
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
-from gestion_academica.serializers import ActivarCuentaSerializer
+from gestion_academica.serializers.auth_serializers.activar_cuenta_serializer import ActivarCuentaSerializer
 from drf_yasg.utils import swagger_auto_schema
 
 

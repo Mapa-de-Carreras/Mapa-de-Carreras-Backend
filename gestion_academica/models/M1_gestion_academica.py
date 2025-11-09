@@ -4,7 +4,7 @@
 MODULO 1: GESTIÓN ACADÉMICA
 
 Incluye las entidades para Instituto, Carrera, PlanesDeEstudio, 
-Asignatura, Resolucion, PlanAsignatura y Correlativa.
+Asignatura, PlanAsignatura y Correlativa.
 '''
 
 from django.db import models
@@ -48,26 +48,6 @@ class Carrera(models.Model):
 
     def __str__(self):
         return self.nombre
-
-
-class Resolucion(models.Model):
-    """Almacena los datos de una resolución oficial que aprueba un plan de estudios."""
-    tipo = models.CharField(max_length=50)
-    emisor = models.CharField(max_length=100)
-    numero = models.IntegerField()
-    anio = models.IntegerField()
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["tipo", "emisor", "numero", "anio"], name="uq_resolucion")
-        ]
-
-    def __str__(self):
-        return f"{self.tipo}-{self.emisor} N°{self.numero}/{self.anio}"
 
 
 class Asignatura(models.Model):
@@ -145,8 +125,6 @@ class PlanDeEstudio(models.Model):
     documento = models.ForeignKey(
         Documento, on_delete=models.SET_NULL, blank=True, null=True, related_name="planes")
 
-    resolucion = models.ForeignKey(
-        Resolucion, on_delete=models.PROTECT, related_name="plan")
     # mantener FK a carrera (pero puede ser nullable si prefiere el flujo: crear plan -> asignaturas -> asociar carrera)
     carrera = models.ForeignKey(
         Carrera, on_delete=models.PROTECT, related_name="planes", null=True, blank=True)
@@ -162,7 +140,7 @@ class PlanDeEstudio(models.Model):
 
     def __str__(self):
         carrera_nombre = self.carrera.nombre if self.carrera else "Sin carrera"
-        return f"Plan {self.resolucion} ({carrera_nombre})"
+        return f"Plan {self.documento} ({carrera_nombre})"
 
     def clean(self):
         # regla: si se asocia carrera, debe tener al menos 1 asignatura

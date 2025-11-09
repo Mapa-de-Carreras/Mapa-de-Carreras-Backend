@@ -2,7 +2,7 @@
 
 from django.contrib import admin
 from gestion_academica.models import (
-    Instituto, Carrera, Resolucion, Asignatura, PlanDeEstudio, PlanAsignatura,
+    Instituto, Carrera, Asignatura, PlanDeEstudio, PlanAsignatura,
     Correlativa, Comision, Rol, Usuario, RolUsuario, Notificacion,
     UsuarioNotificacion, Caracter, Modalidad, Cargo, Docente,
     CarreraCoordinacion, Coordinador, Dedicacion, ParametrosRegimen, Designacion, Documento
@@ -10,7 +10,7 @@ from gestion_academica.models import (
 
 # Registra todos los modelos para que aparezcan en el panel de admin.
 modelos_a_registrar = [
-    Instituto, Carrera, Resolucion, Asignatura, PlanDeEstudio, PlanAsignatura,
+    Instituto, Carrera, Asignatura, PlanDeEstudio, PlanAsignatura,
     Correlativa, Comision, Rol, Usuario, RolUsuario, Notificacion,
     UsuarioNotificacion, Caracter, Modalidad, Cargo, Docente,
     CarreraCoordinacion, Coordinador, Dedicacion, ParametrosRegimen, Designacion, Documento

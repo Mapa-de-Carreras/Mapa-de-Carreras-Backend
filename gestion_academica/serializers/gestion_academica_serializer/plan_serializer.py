@@ -1,6 +1,6 @@
 
 from rest_framework import serializers
-from gestion_academica.models import PlanDeEstudio,Resolucion,PlanAsignatura,Carrera,Documento,Asignatura,Correlativa
+from gestion_academica.models import PlanDeEstudio,PlanAsignatura,Carrera,Documento,Asignatura,Correlativa
 from .asignatura_serializer import AsignaturaSerializer
 
 
@@ -140,9 +140,7 @@ class PlanDeEstudioCreateUpdateSerializer(serializers.ModelSerializer):
     carrera_id = serializers.PrimaryKeyRelatedField(
         source="carrera", queryset=Carrera.objects.all(), write_only=True
     )
-    resolucion_id = serializers.PrimaryKeyRelatedField(
-        source="resolucion", queryset=Resolucion.objects.all(), write_only=True
-    )
+    
     documento_id = serializers.PrimaryKeyRelatedField(
         source="documento", queryset=Documento.objects.all(),
         required=False, allow_null=True, write_only=True
@@ -150,16 +148,16 @@ class PlanDeEstudioCreateUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PlanDeEstudio
-        fields = ["fecha_inicio", "esta_vigente", "carrera_id", "resolucion_id", "documento_id"]
+        fields = ["fecha_inicio", "esta_vigente", "carrera_id", "documento_id"]
 
     def validate(self, data):
         carrera = data.get("carrera") or getattr(self.instance, "carrera", None)
-        resolucion = data.get("resolucion") or getattr(self.instance, "resolucion", None)
+        documento = data.get("documento") or getattr(self.instance, "documento", None)
 
-        if carrera and resolucion:
+        if carrera and documento:
             existe = PlanDeEstudio.objects.filter(
                 carrera=carrera,
-                resolucion=resolucion
+                documento=documento
             ).exclude(id=self.instance.id if self.instance else None).exists()
 
             if existe:
@@ -174,14 +172,6 @@ class PlanDeEstudioVigenciaSerializer(serializers.ModelSerializer):
     class Meta:
         model = PlanDeEstudio
         fields = ["esta_vigente"]
-        
-        
-class ResolucionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Resolucion
-        fields = [
-            "id", "tipo", "emisor", "numero", "anio", "created_at", "updated_at"
-        ]
         
 
 class DocumentoSerializer(serializers.ModelSerializer):

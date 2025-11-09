@@ -6,7 +6,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
 
 def listar_planes():
-    return models.PlanDeEstudio.objects.select_related("carrera", "resolucion", "documento").prefetch_related("asignaturas")
+    return models.PlanDeEstudio.objects.select_related("carrera", "documento").prefetch_related("asignaturas")
 
 def obtener_plan(pk):
     try:

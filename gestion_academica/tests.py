@@ -23,14 +23,14 @@ class InstitutoCarreraTests(TestCase):
         self.assertEqual(carrera.instituto, instituto)
 
 
-class ResolucionPlanAsignaturaTests(TestCase):
+class DocumentoPlanAsignaturaTests(TestCase):
     # Preparamos los datos base para las pruebas de la estructura académica
     def setUp(self):
         self.instituto = Instituto.objects.create(
             codigo="IDEI", nombre="Informática")
         self.carrera = Carrera.objects.create(
             codigo="INF-GRADO", nombre="Ing. Informática", nivel="GRADO", instituto=self.instituto)
-        self.resolucion = Resolucion.objects.create(
+        self.documento = Documento.objects.create(
             tipo="CS", emisor="UNIV", numero=123, anio=2024)
 
         # Asignaturas para pruebas de correlatividad
@@ -54,7 +54,7 @@ class ResolucionPlanAsignaturaTests(TestCase):
     def test_plan_estudio_y_asignaturas(self):
         """Prueba la relación muchos-a-muchos entre PlanDeEstudio y Asignatura."""
         plan = PlanDeEstudio.objects.create(
-            carrera=self.carrera, resolucion=self.resolucion, fecha_inicio="2024-01-01")
+            carrera=self.carrera, documento=self.documento, fecha_inicio="2024-01-01")
         pa1 = PlanAsignatura.objects.create(
             plan_de_estudio=plan, asignatura=self.asig1, anio=1)
         pa2 = PlanAsignatura.objects.create(
@@ -66,7 +66,7 @@ class ResolucionPlanAsignaturaTests(TestCase):
     def test_correlativa_valida(self):
         """Prueba que se puede crear una correlativa válida entre asignaturas de distintos períodos."""
         plan = PlanDeEstudio.objects.create(
-            carrera=self.carrera, resolucion=self.resolucion, fecha_inicio="2024-01-01")
+            carrera=self.carrera, documento=self.documento, fecha_inicio="2024-01-01")
         pa1 = PlanAsignatura.objects.create(
             plan_de_estudio=plan, asignatura=self.asig1, anio=1)
         pa2 = PlanAsignatura.objects.create(
@@ -80,7 +80,7 @@ class ResolucionPlanAsignaturaTests(TestCase):
     def test_correlativa_invalida_misma_asignatura(self):
         """Prueba que una asignatura no puede ser correlativa de sí misma."""
         plan = PlanDeEstudio.objects.create(
-            carrera=self.carrera, resolucion=self.resolucion, fecha_inicio="2024-01-01")
+            carrera=self.carrera, documento=self.documento, fecha_inicio="2024-01-01")
         pa1 = PlanAsignatura.objects.create(
             plan_de_estudio=plan, asignatura=self.asig1, anio=1)
 
@@ -93,7 +93,7 @@ class ResolucionPlanAsignaturaTests(TestCase):
     def test_correlativa_invalida_mismo_periodo(self):
         """Prueba que el modelo rechaza correlativas en el mismo año y cuatrimestre."""
         plan = PlanDeEstudio.objects.create(
-            carrera=self.carrera, resolucion=self.resolucion, fecha_inicio="2024-01-01")
+            carrera=self.carrera, documento=self.documento, fecha_inicio="2024-01-01")
 
         pa1 = PlanAsignatura.objects.create(
             plan_de_estudio=plan, asignatura=self.asig1, anio=1)

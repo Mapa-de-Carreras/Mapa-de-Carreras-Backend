@@ -13,10 +13,7 @@ class Command(BaseCommand):
             
             call_command('loaddata', 'gestion_academica/fixtures/data_gestion_academica_carreras.json')
             self.stdout.write(self.style.SUCCESS("Datos iniciales de CARRERAS cargados ✅"))
-
-            call_command('loaddata', 'gestion_academica/fixtures/data_gestion_academica_resoluciones.json')
-            self.stdout.write(self.style.SUCCESS("Datos iniciales de RESOLUCIONES cargados ✅"))
-
+            
             call_command('loaddata', 'gestion_academica/fixtures/data_gestion_academica_documentos.json')
             self.stdout.write(self.style.SUCCESS("Datos iniciales de DOCUMENTOS cargados ✅"))
 

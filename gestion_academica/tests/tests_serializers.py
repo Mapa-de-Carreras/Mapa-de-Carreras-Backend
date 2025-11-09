@@ -31,7 +31,7 @@ class SerializersIntegrationTests(TestCase):
             codigo="IDEI", nombre="Informática")
         self.carrera, _ = models.Carrera.objects.get_or_create(
             codigo="INF-GRADO", nombre="Ing. Informática", nivel="GRADO", instituto=self.instituto)
-        self.resolucion, _ = models.Resolucion.objects.get_or_create(
+        self.documento, _ = models.Documento.objects.get_or_create(
             tipo="CS", emisor="UNIV", numero=123, anio=2024)
 
         # catálogos docentes
@@ -74,7 +74,7 @@ class SerializersIntegrationTests(TestCase):
         carrera = cs.save()
         self.assertEqual(carrera.instituto.id, inst.id)
 
-    def test_resolucion_asignatura_plan_documento(self):
+    def test_asignatura_plan_documento(self):
         # Asignatura (horas_totales calculadas)
         a_payload = {
             "codigo": "ALG1",
@@ -99,9 +99,8 @@ class SerializersIntegrationTests(TestCase):
         self.assertEqual(doc.anio, 2024)
 
         # PlanDeEstudio con PlanAsignatura (crear plan, luego plan-asignatura)
-        p_payload = {"fecha_inicio": "2024-01-01", "resolucion_id": self.resolucion.id,
-                     "carrera_id": self.carrera.id, "documento_id": doc.id}
-        s_plan = PlanDeEstudioSerializer(data=p_payload)
+        p_payload = {"fecha_inicio": "2024-01-01", "carrera_id": self.carrera.id, "documento_id": doc.id}
+        s_plan = PlanDeEstudioSerializerDetail(data=p_payload)
         self.assertTrue(s_plan.is_valid(), s_plan.errors)
         plan = s_plan.save()
 

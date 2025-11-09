@@ -1,6 +1,6 @@
 [
     {
-        "model": "gestion_academica.resolucion",
+        "model": "gestion_academica.documento",
         "pk": 1,
         "fields": {
         "tipo": "RESOLUCIÓN",
@@ -12,7 +12,7 @@
         }
     },
     {
-        "model": "gestion_academica.resolucion",
+        "model": "gestion_academica.documento",
         "pk": 2,
         "fields": {
         "tipo": "RESOLUCIÓN",

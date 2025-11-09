@@ -19,8 +19,9 @@ from gestion_academica.serializers.M3_designaciones_docentes import (
 )
 from gestion_academica.serializers.M4_gestion_usuarios_autenticacion import (
     UsuarioSerializer, NotificacionSerializer, UsuarioNotificacionSerializer,
-    CarreraCoordinacionSerializer, CoordinadorSerializer, RolSerializer, RolUsuarioSerializer
+    RolSerializer, RolUsuarioSerializer
 )
+from gestion_academica.serializers.user_serializers.usuario_serializer import CoordinadorSerializer, CarreraCoordinacionSerializer
 
 
 User = get_user_model()

@@ -3,12 +3,17 @@ from django.http import Http404
 from rest_framework import viewsets, mixins
 
 # Permisos
-from gestion_academica.permissions import EsAdministrador, EsCoordinadorDeCarrera, EsDocente, UsuarioViewSetPermission
+from gestion_academica.permissions import EsAdministrador, UsuarioViewSetPermission
 # Modelos
-from gestion_academica.models.M4_gestion_usuarios_autenticacion import Usuario, Coordinador
-from gestion_academica.models.M2_gestion_docentes import Docente
+from gestion_academica.models.M4_gestion_usuarios_autenticacion import Usuario
 # Serializers
-from ...serializers import UsuarioSerializer, EditarDocenteSerializer, EditarCoordinadorSerializer, EditarUsuarioSerializer
+# from ...serializers import (
+#     UsuarioSerializer,
+#     EditarUsuarioSerializer,
+#     AdminUsuarioDetalleSerializer
+# )
+from ...serializers.user_serializers.usuario_serializer import UsuarioSerializer, AdminUsuarioDetalleSerializer
+from ...serializers.user_serializers.editar_usuario_serializer import EditarUsuarioSerializer
 # Importaciones para realizar el filtrado de usuarios deshabilitados
 from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
@@ -49,9 +54,16 @@ class UsuarioViewSet(mixins.ListModelMixin,
                      mixins.DestroyModelMixin,
                      viewsets.GenericViewSet):
     """ 
-    ViewSet para la GESTIÓN DE USUARIOS (Solo Admin).
-    NO se usa para registro público.
-    Permite: Listar, Ver detalle, Actualizar y Borrar usuarios.
+    ViewSet para la GESTIÓN DE USUARIOS (Datos base).
+    
+    Permite:
+    - Admin: Listar, Ver, Actualizar (todo), Borrar.
+    - Usuarios: Ver y Actualizar (solo sus datos personales).
+    
+    PARA GESTIONAR DATOS DE ROL (ej: modalidad de docente
+    o carreras de coordinador) USE LOS ENDPOINTS:
+    - /api/docentes/{pk}/
+    - /api/coordinadores/{pk}/
     """
     queryset = Usuario.objects.all().order_by('id')
     serializer_class = UsuarioSerializer
@@ -74,78 +86,42 @@ class UsuarioViewSet(mixins.ListModelMixin,
 
     def get_serializer_class(self):
         """
-        Devuelve un serializer diferente basado en el ROL del usuario.
+        Devuelve un serializer diferente basado en la ACCIÓN
+        y el ROL del *solicitante*.
         """
-        usuario_que_pide = self.request.user
+        # 1. Comprobar quién está haciendo la solicitud
+        es_admin = EsAdministrador().has_permission(self.request, self)
+        
+        # 2. Comprobar la acción
+        action = self.action
 
-        # --- 1. LÓGICA DEL ADMINISTRADOR ---
-        if EsAdministrador().has_permission(self.request, self):
-            if self.action == 'list' or self.action == 'create':
+        # 3. Lógica de decisión
+        if action == 'retrieve':
+            # Para GET (Detalle), usamos el serializer más rico que
+            # muestra los perfiles anidados de Docente y Coordinador.
+            # UsuarioViewSetPermission ya restringe *quién* se puede ver.
+            return AdminUsuarioDetalleSerializer
+
+        if action in ['update', 'partial_update']:
+            if es_admin:
+                # El Admin usa el serializer que PUEDE cambiar roles
+                # (y que tiene la lógica de desactivar carreras)
                 return UsuarioSerializer
-
-            # Para 'retrieve' (GET), 'update' (PATCH), etc.
-            try:
-                pk = self.kwargs.get('pk')
-                if not pk:
-                    return UsuarioSerializer
-
-                # Buscamos el usuario Y sus roles
-                usuario_a_editar = Usuario.objects.prefetch_related(
-                    'roles').get(pk=pk)
-
-                if usuario_a_editar.roles.filter(nombre__iexact="DOCENTE").exists():
-                    return EditarDocenteSerializer
-
-                if usuario_a_editar.roles.filter(nombre__iexact="COORDINADOR").exists():
-                    return EditarCoordinadorSerializer
-
-                return UsuarioSerializer
-
-            except Usuario.DoesNotExist:
-                return UsuarioSerializer
-            except Exception:
-                return UsuarioSerializer
-
-        # --- 2. LÓGICA DEL USUARIO NORMAL (NO ADMIN) ---
-        if usuario_que_pide.roles.filter(nombre__iexact="COORDINADOR").exists():
-            return EditarCoordinadorSerializer
-
-        if usuario_que_pide.roles.filter(nombre__iexact="DOCENTE").exists():
-            return EditarDocenteSerializer
-
-        return EditarUsuarioSerializer
+            else:
+                # Un usuario normal solo puede editar sus datos personales
+                return EditarUsuarioSerializer
+        
+        # Para 'list', 'create', o cualquier otra, usa el default
+        return UsuarioSerializer
 
     def get_object(self):
         """
-        Sobrescribe get_object para devolver la instancia del modelo
-        hijo (Docente, Coordinador) si el serializer lo requiere,
-        en lugar del modelo padre (Usuario).
+        Sobrescribe get_object para devolver SIEMPRE
+        la instancia base de Usuario.
         """
         pk = self.kwargs.get('pk')
-
-        # Obtenemos la *clase* de serializer que se va a usar
-        serializer_class = self.get_serializer_class()
-
-        # 1. Si el serializer es el de Docente...
-        if serializer_class == EditarDocenteSerializer:
-            try:
-                # ...buscamos y devolvemos el objeto Docente.
-                return Docente.objects.get(pk=pk)  # Usa tu import de Docente
-            except Docente.DoesNotExist:
-                raise Http404("No se encontró el Docente.")
-
-        # 2. Si el serializer es el de Coordinador...
-        if serializer_class == EditarCoordinadorSerializer:
-            try:
-                # ...buscamos y devolvemos el objeto Coordinador.
-                # Usa tu import de Coordinador
-                return Coordinador.objects.get(pk=pk)
-            except Coordinador.DoesNotExist:
-                raise Http404("No se encontró el Coordinador.")
-
-        # 3. Para cualquier otro caso (Admin, Alumno)...
         try:
-            # ...devolvemos el objeto Usuario base.
+            # Siempre busca y devuelve el objeto Usuario base
             return Usuario.objects.get(pk=pk)
         except Usuario.DoesNotExist:
             raise Http404("No se encontró el Usuario.")
@@ -156,7 +132,8 @@ class UsuarioViewSet(mixins.ListModelMixin,
     def partial_update(self, request, *args, **kwargs):
         """
         Actualiza parcialmente (PATCH) un usuario.
-        El serializer y los permisos se aplican dinámicamente
-        según el rol del solicitante.
+        El serializer se aplica dinámicamente:
+        - Admin: Usa UsuarioSerializer (puede cambiar roles).
+        - Usuario normal: Usa EditarUsuarioSerializer (solo datos personales).
         """
         return super().partial_update(request, *args, **kwargs)

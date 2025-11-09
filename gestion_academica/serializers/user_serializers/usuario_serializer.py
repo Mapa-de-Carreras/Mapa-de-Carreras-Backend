@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 from gestion_academica import models
 from .base_usuario_serializer import BaseUsuarioSerializer
@@ -47,15 +48,13 @@ class UsuarioSerializer(BaseUsuarioSerializer):
         style={'input_type': 'password'}
     )
 
-    carreras_coordinadas = serializers.SerializerMethodField()
-
     class Meta:
         model = models.Usuario
         # El Admin puede ver y editar todo
         fields = [
             'id', 'username', 'first_name', 'last_name', 'email', 'is_staff', 'is_active',
             'password', 'password2', 'legajo', 'fecha_nacimiento', 
-            'celular', 'roles', 'carreras_coordinadas'
+            'celular', 'roles'
         ]
         extra_kwargs = {
             # Hacemos que la contraseña no sea requerida en PATCH
@@ -63,26 +62,6 @@ class UsuarioSerializer(BaseUsuarioSerializer):
             'password2': {'required': False},
             'fecha_nacimiento': {'required': True} # Sigue siendo req. para crear
         }
-    
-    def get_carreras_coordinadas(self, obj):
-        """
-        Si el usuario es un Coordinador, devuelve la lista de
-        Carreras que tiene asignadas Y ACTIVAS.
-        """
-        # Comprobamos si el Usuario es un Coordinador
-        if hasattr(obj, 'coordinador'):            
-            # Accedemos al M2M 'carreras_coordinadas'
-            # y filtramos usando la tabla 'through' (carreracoordinacion)
-            # para traer solo las carreras donde la relación está 'activo=True'.
-            carreras_activas = obj.coordinador.carreras_coordinadas.filter(
-                carreracoordinacion__activo=True
-            )
-            
-            # Usamos tu CarreraSerializer existente
-            return CarreraSerializer(carreras_activas, many=True).data
-        
-        # Si no es coordinador, devuelve lista vacía
-        return []
 
     def validate(self, data):
         """
@@ -150,9 +129,27 @@ class UsuarioSerializer(BaseUsuarioSerializer):
         """
         Maneja la actualización de roles (para Admin)
         y llama al 'update' de la base para los otros campos.
+        
+        Añade lógica para desactivar carreras si se quita el rol
+        de Coordinador.
         """
+        
         # 1. Extrae los roles antes de llamar al 'update' padre
         roles_data = validated_data.pop('roles', None)
+
+        rol_coordinador = None
+        era_coordinador = False
+        rol_docente = None
+        era_docente = False
+        if roles_data is not None:
+            # Revisa los roles que el usuario TENÍA ANTES
+            try:
+                rol_coordinador = models.Rol.objects.get(nombre__iexact="COORDINADOR")
+                era_coordinador = instance.roles.filter(pk=rol_coordinador.pk).exists()
+                rol_docente = models.Rol.objects.get(nombre__iexact="DOCENTE")
+                era_docente = instance.roles.filter(pk=rol_docente.pk).exists()
+            except models.Rol.DoesNotExist:
+                pass # El rol no existe, no hay nada que hacer
 
         # 2. Llama al 'update' de BaseUsuarioSerializer
         #    para manejar todos los otros campos (email, nombre, etc.)
@@ -161,23 +158,128 @@ class UsuarioSerializer(BaseUsuarioSerializer):
         # 3. Si se enviaron roles, actualízalos
         if roles_data is not None:
             # .set() es la forma de Django de manejar ManyToMany
+            # Esto maneja borrar RolUsuario
             instance.roles.set(roles_data)
-        
+
+            # Obtener los nombres de los NUEVOS roles
+            rol_nombres_nuevos = [rol.nombre.lower() for rol in roles_data]
+            if "docente" in rol_nombres_nuevos:
+                docente_perfil, _ = models.Docente.objects.get_or_create(usuario=instance)
+                if hasattr(docente_perfil, 'activo') and not docente_perfil.activo:
+                    docente_perfil.activo = True
+                    docente_perfil.save()
+            
+            if "coordinador" in rol_nombres_nuevos:
+                coordinador_perfil, _ = models.Coordinador.objects.get_or_create(usuario=instance)
+                if hasattr(coordinador_perfil, 'activo') and not coordinador_perfil.activo:
+                    coordinador_perfil.activo = True
+                    coordinador_perfil.save()
+            
+            # --- 3d. Lógica de Desactivación (Ejecución) ---
+            if era_coordinador and "coordinador" not in rol_nombres_nuevos:
+                if hasattr(instance, 'coordinador'): 
+                    coordinador_perfil = instance.coordinador
+                    # ¡Se le quitó el rol! Desactivar todas sus carreras activas.
+                    models.CarreraCoordinacion.objects.filter(
+                        coordinador=coordinador_perfil, 
+                        activo=True
+                    ).update(activo=False, fecha_fin=timezone.now())
+                if hasattr(coordinador_perfil, 'activo'):
+                    coordinador_perfil.activo = False
+                    coordinador_perfil.save()
+            # Lógica de desactivación docente
+            if era_docente and "docente" not in rol_nombres_nuevos:
+                if hasattr(instance, 'docente'):
+                    docente_perfil = instance.docente
+                    
+                    # Deshabilitar el perfil del Docente
+                    if hasattr(docente_perfil, 'activo'):
+                        docente_perfil.activo = False
+                        docente_perfil.save()
+
         return instance
     
-    def to_representation(self, instance):
+class CarreraCoordinacionSerializer(serializers.ModelSerializer):
+    carrera = serializers.StringRelatedField(
+        read_only=True
+    )
+    carrera_id = serializers.PrimaryKeyRelatedField(
+        source="carrera",
+        queryset=models.Carrera.objects.all(),
+        write_only=True
+    )
+
+    coordinador = serializers.StringRelatedField(read_only=True)
+    coordinador_id = serializers.PrimaryKeyRelatedField(
+        source="coordinador",
+        queryset=models.Coordinador.objects.all(),
+        write_only=True
+    )
+
+    creado_por = UsuarioSerializer(read_only=True)
+    creado_por_id = serializers.PrimaryKeyRelatedField(
+        source="creado_por",
+        queryset=models.Usuario.objects.all(),
+        write_only=True
+    )
+
+    class Meta:
+        model = models.CarreraCoordinacion
+        fields = [
+            'id', 'carrera', 'carrera_id', 'coordinador', 'coordinador_id',
+            'fecha_inicio', 'fecha_fin', 'activo', 'creado_por', 'creado_por_id'
+        ]
+    
+class CoordinadorSerializer(serializers.ModelSerializer):
+    carreras_coordinadas = CarreraCoordinacionSerializer(
+        source="carreracoordinacion_set",
+        many=True,
+        read_only=True
+    )
+
+    class Meta:
+        model = models.Coordinador
+        fields = [
+            'id', 'carreras_coordinadas', 'usuario_id'
+        ]
+
+from ..M2_gestion_docentes import DocenteSerializer
+class AdminUsuarioDetalleSerializer(UsuarioSerializer):
+    """
+    Serializer de SÓLO LECTURA para que el Admin vea
+    el perfil COMPLETO de un usuario, incluyendo sus
+    datos de Docente o Coordinador (si los tiene).
+    """
+    
+    # SerializerMethodField para cargar dinámicamente
+    # los datos del rol específico.
+    docente_data = serializers.SerializerMethodField(read_only=True)
+    coordinador_data = serializers.SerializerMethodField(read_only=True)
+
+    class Meta(UsuarioSerializer.Meta):
+        # Hereda todos los fields de UsuarioSerializer
+        # y añade los nuevos.
+        fields = UsuarioSerializer.Meta.fields + [
+            'docente_data', 'coordinador_data'
+        ]
+
+    def get_docente_data(self, obj):
         """
-        Sobrescribe la salida del serializer.
-        Oculta 'carreras_coordinadas' si el usuario no es un Coordinador.
+        Si el usuario tiene un perfil de docente,
+        lo serializa y lo devuelve.
         """
-        # 1. Obtiene la representación de datos estándar (diccionario)
-        data = super().to_representation(instance)
-        
-        # 2. Comprueba si el usuario (instance) tiene el atributo 'coordinador'
-        #    (Esto es más fiable que comprobar el rol aquí)
-        if not hasattr(instance, 'coordinador'):
-            # 3. Si NO es coordinador, quita el campo del diccionario
-            data.pop('carreras_coordinadas', None)
-        
-        # 4. Devuelve el diccionario modificado
-        return data
+        # hasattr() comprueba si existe el "hijo" (Docente)
+        if hasattr(obj, 'docente'):
+            # Usamos el serializer de detalle de Docente
+            return DocenteSerializer(obj.docente).data
+        return None
+
+    def get_coordinador_data(self, obj):
+        """
+        Si el usuario tiene un perfil de coordinador,
+        lo serializa y lo devuelve.
+        """
+        if hasattr(obj, 'coordinador'):
+            # Usamos el serializer de Coordinador
+            return CoordinadorSerializer(obj.coordinador).data
+        return None

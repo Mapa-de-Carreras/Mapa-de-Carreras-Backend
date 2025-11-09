@@ -15,6 +15,9 @@ class DocenteViewSet(viewsets.ModelViewSet):
     queryset = models.Docente.objects.all().order_by("id")
     serializer_class = DocenteSerializer
     permission_classes = [IsAuthenticated]
+    # El 'lookup_field' ahora debe ser 'usuario_id'
+    # para que /api/docentes/7/ funcione.
+    lookup_field = 'usuario__id'
 
     def _user_can_manage(self, user):
         return user.is_superuser or user.roles.filter(nombre__in=["Admin", "Coordinador"]).exists()
@@ -32,43 +35,43 @@ class DocenteViewSet(viewsets.ModelViewSet):
             raise ValidationError(
                 "El legajo ya se encuentra registrado por otro usuario.")
 
-    def create(self, request, *args, **kwargs):
-        '''
-        Permite crear un docente
-        '''
-        user = request.user
-        self._ensure_manage_permission(user)
+    # def create(self, request, *args, **kwargs):
+    #     '''
+    #     Permite crear un docente
+    #     '''
+    #     user = request.user
+    #     self._ensure_manage_permission(user)
 
-        data = request.data.copy()
+    #     data = request.data.copy()
 
-        # verifica legajo unico
-        legajo = request.data.get("legajo")
-        if not legajo:
-            return Response({"detail": "El legajo es requerido para crear un docente."},
-                            status=status.HTTP_400_BAD_REQUEST)
+    #     # verifica legajo unico
+    #     legajo = request.data.get("legajo")
+    #     if not legajo:
+    #         return Response({"detail": "El legajo es requerido para crear un docente."},
+    #                         status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            self._validate_unique_legajo(legajo)
-        except ValidationError as e:
-            return Response({"legajo": [str(e)]}, status=status.HTTP_400_BAD_REQUEST)
+    #     try:
+    #         self._validate_unique_legajo(legajo)
+    #     except ValidationError as e:
+    #         return Response({"legajo": [str(e)]}, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+    #     serializer = self.get_serializer(data=request.data)
+    #     serializer.is_valid(raise_exception=True)
 
-        serializer.validated_data["cantidad_materias"] = 0
+    #     serializer.validated_data["cantidad_materias"] = 0
 
-        try:
-            with transaction.atomic():
-                instance = serializer.save()
-        except Exception as e:
-            # Si hay una violación por DB (ej: unique), devolver un mensaje amigable
-            return Response(
-                {"detail": f"Error al crear docente: {str(e)}"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+    #     try:
+    #         with transaction.atomic():
+    #             instance = serializer.save()
+    #     except Exception as e:
+    #         # Si hay una violación por DB (ej: unique), devolver un mensaje amigable
+    #         return Response(
+    #             {"detail": f"Error al crear docente: {str(e)}"},
+    #             status=status.HTTP_400_BAD_REQUEST
+    #         )
 
-        out_serializer = self.get_serializer(instance)
-        return Response(out_serializer.data, status=status.HTTP_201_CREATED)
+    #     out_serializer = self.get_serializer(instance)
+    #     return Response(out_serializer.data, status=status.HTTP_201_CREATED)
 
     def _handle_update(self, request, partial):
         user = request.user

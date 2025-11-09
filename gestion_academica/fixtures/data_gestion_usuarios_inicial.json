@@ -83,7 +83,7 @@
     {
         "model": "gestion_academica.coordinador",
         "pk": 3,
-        "fields": {}
+        "fields": {"usuario": 3}
     },
     {
         "model": "gestion_academica.rolusuario",

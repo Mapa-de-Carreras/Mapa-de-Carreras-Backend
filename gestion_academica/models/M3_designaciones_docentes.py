@@ -55,8 +55,8 @@ class Designacion(models.Model):
         ('TEORICO + PRACTICO', 'Teorico + Practico'),
     ]
 
-    fecha_inicio = models.DateField(db_index=True)
-    fecha_fin = models.DateField(null=True, blank=True, db_index=True)
+    fecha_inicio = models.DateTimeField(db_index=True)
+    fecha_fin = models.DateTimeField(null=True, blank=True, db_index=True)
     tipo_designacion = models.CharField(
         max_length=20, choices=TIPO_DESIGNACION_CHOICES)
 

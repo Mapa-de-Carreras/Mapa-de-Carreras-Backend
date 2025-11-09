@@ -3,8 +3,7 @@
 from django.contrib.auth import authenticate
 from rest_framework import serializers
 from gestion_academica import models
-from .user_serializers import UsuarioSerializer
-
+from .user_serializers.usuario_serializer import UsuarioSerializer
 
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
@@ -59,53 +58,3 @@ class UsuarioNotificacionSerializer(serializers.ModelSerializer):
         model = models.UsuarioNotificacion
         fields = ['id', 'usuario', 'notificacion', 'leida',
                   'fecha_leida', 'eliminado', 'created_at']
-
-
-class CarreraCoordinacionSerializer(serializers.ModelSerializer):
-    carrera = serializers.StringRelatedField(
-        read_only=True
-    )
-    carrera_id = serializers.PrimaryKeyRelatedField(
-        source="carrera",
-        queryset=models.Carrera.objects.all(),
-        write_only=True
-    )
-
-    coordinador = serializers.StringRelatedField(read_only=True)
-    coordinador_id = serializers.PrimaryKeyRelatedField(
-        source="coordinador",
-        queryset=models.Coordinador.objects.all(),
-        write_only=True
-    )
-
-    creado_por = UsuarioSerializer(read_only=True)
-    creado_por_id = serializers.PrimaryKeyRelatedField(
-        source="creado_por",
-        queryset=models.Usuario.objects.all(),
-        write_only=True
-    )
-
-    class Meta:
-        model = models.CarreraCoordinacion
-        fields = [
-            'id', 'carrera', 'carrera_id', 'coordinador', 'coordinador_id',
-            'fecha_inicio', 'fecha_fin', 'activo', 'creado_por', 'creado_por_id'
-        ]
-
-
-class CoordinadorSerializer(serializers.ModelSerializer):
-    carreras_coordinadas = CarreraCoordinacionSerializer(
-        source="carreracoordinacion_set",
-        many=True,
-        read_only=True
-    )
-
-    class Meta:
-        model = models.Coordinador
-        fields = [
-            'id', 'legajo', 'username', 'first_name', 'last_name', 'email', 'celular',
-            'carreras_coordinadas'
-        ]
-
-        read_only_fields = ['legajo', 'first_name',
-                            'last_name', 'email', 'celular']

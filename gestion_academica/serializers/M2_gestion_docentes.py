@@ -48,9 +48,6 @@ class ParametrosRegimenSerializer(serializers.ModelSerializer):
 
 
 class DocenteSerializer(serializers.ModelSerializer):
-    # permite que se envie password al crear/editar un docente
-    password = serializers.CharField(write_only=True, required=False)
-
     modalidad_id = serializers.PrimaryKeyRelatedField(
         source="modalidad",
         queryset=models.Modalidad.objects.all(),
@@ -84,46 +81,14 @@ class DocenteSerializer(serializers.ModelSerializer):
         model = models.Docente
         # hereda todos los campos de Usuario mas los suyos
         fields = [
-            "id", "username", "legajo", "first_name", "last_name", "email", "celular",
-            "modalidad", "modalidad_id", "caracter", "caracter_id",
-            "dedicacion", "dedicacion_id", "cantidad_materias",
-            "password"
+            "id",
+            "modalidad", "modalidad_id", 
+            "caracter", "caracter_id",
+            "dedicacion", "dedicacion_id", 
+            "cantidad_materias", "usuario_id"
         ]
 
         read_only_fields = ["modalidad", "caracter", "dedicacion"]
-
-    def create(self, validated_data):
-        """
-        Crea un nuevo Docente (que también es un Usuario) de forma segura.
-        """
-        password = validated_data.pop("password", None)
-
-        # validar campos mínimos
-        if not validated_data.get('username') or not password:
-            raise serializers.ValidationError(
-                {"detail": "username y password son requeridos para crear docente."})
-
-        # aseguramos valores no-None para campos string
-        first_name = validated_data.get('first_name') or ""
-        last_name = validated_data.get('last_name') or ""
-        email = validated_data.get('email') or ""
-        legajo = validated_data.get('legajo') or ""
-        celular = validated_data.get("celular") or ""
-
-        docente = models.Docente.objects.create_user(
-            username=validated_data.get('username'),
-            password=password,
-            legajo=legajo,
-            first_name=first_name,
-            last_name=last_name,
-            email=email,
-            celular=celular,
-            modalidad=validated_data.get('modalidad'),
-            caracter=validated_data.get('caracter'),
-            dedicacion=validated_data.get('dedicacion')
-        )
-
-        return docente
 
     def update(self, instance, validated_data):
         '''Actualiza solo los campos permitidos'''

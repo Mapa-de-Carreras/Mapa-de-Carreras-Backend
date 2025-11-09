@@ -45,11 +45,16 @@ class Dedicacion(models.Model):
         return self.nombre
 
 
-class Docente(Usuario):
+class Docente(models.Model):
     """
     Modelo para el Docente. Hereda todos los campos de Usuario
     y añade relaciones específicas de su rol.
     """
+    usuario = models.OneToOneField(
+        Usuario,
+        on_delete=models.CASCADE,
+        related_name="docente"
+    )
     modalidad = models.ForeignKey(
         Modalidad, on_delete=models.SET_NULL, null=True, blank=True, related_name="docentes")
     caracter = models.ForeignKey(
@@ -57,9 +62,10 @@ class Docente(Usuario):
     dedicacion = models.ForeignKey(
         Dedicacion, on_delete=models.SET_NULL, null=True, blank=True, related_name="docentes")
     cantidad_materias = models.PositiveIntegerField(default=0)
+    activo = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"{self.last_name} {self.first_name}"
+        return f"{self.usuario.last_name} {self.usuario.first_name}"
 
 
 class ParametrosRegimen(models.Model):

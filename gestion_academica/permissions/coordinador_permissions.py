@@ -7,6 +7,9 @@ from gestion_academica.models import (
     Comision,
     Designacion
 )
+from rest_framework import serializers
+
+
 
 class EsCoordinadorDeCarrera(permissions.BasePermission):
     """
@@ -14,7 +17,9 @@ class EsCoordinadorDeCarrera(permissions.BasePermission):
     asociada al objeto (Carrera, PlanDeEstudio, Comision, Designacion).
     """
 
-    def has_object_permission(self, request, view, obj):
+    carreras_coordinadas = serializers.SerializerMethodField()
+
+    def has_permission(self, request, view):
         usuario = request.user
         if not usuario.is_authenticated:
             return False

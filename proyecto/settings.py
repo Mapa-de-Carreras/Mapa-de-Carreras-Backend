@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+from datetime import timedelta
 from pathlib import Path
 from dotenv import load_dotenv
 import os
@@ -47,10 +48,10 @@ INSTALLED_APPS = [
     # --- Apps de Terceros ---
     'rest_framework',
     'rest_framework_simplejwt',
-    'rest_framework_simplejwt.token_blacklist', # Para el Logout
+    'rest_framework_simplejwt.token_blacklist',  # Para el Logout
     'drf_yasg',                                 # Para Swagger
     'corsheaders',
-    'django_filters', # Para filtrar datos
+    'django_filters',  # Para filtrar datos
 ]
 
 MIDDLEWARE = [
@@ -163,9 +164,8 @@ REST_FRAMEWORK = {
 }
 
 # --- Configuración de Simple JWT ---
-from datetime import timedelta
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
@@ -195,6 +195,6 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # --- Configuración de CORS ---
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000", 
+    "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]

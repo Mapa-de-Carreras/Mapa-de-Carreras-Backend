@@ -1,3 +1,5 @@
+# gestion_academica/serializers/auth_serializers/enviar_codigo_verificacion_serializer.py
+
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
@@ -10,29 +12,33 @@ User = get_user_model()
 
 class EnviarCodigoVerificacionSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    contexto = serializers.ChoiceField(choices=["registro", "recuperacion", "reenviar_activacion"])
+    contexto = serializers.ChoiceField(
+        choices=["registro", "recuperacion", "reenviar_activacion"])
 
     def validate(self, data):
         """ Validación centralizada antes de enviar el código. """
         email = data.get('email')
         contexto = data.get('contexto')
-        
+
         if contexto == "recuperacion":
             # Para recuperación, el email SÍ debe existir
             try:
                 user = User.objects.get(email=email)
             except User.DoesNotExist:
-                 raise serializers.ValidationError({"error": "Este correo no está registrado."})
-        
+                raise serializers.ValidationError(
+                    {"error": "Este correo no está registrado."})
+
         elif contexto == "reenviar_activacion":
             # Para reenviar, el email SÍ debe existir Y estar INACTIVO
             try:
                 user = User.objects.get(email=email)
             except User.DoesNotExist:
-                 raise serializers.ValidationError({"error": "Este correo no está registrado."})
-            
+                raise serializers.ValidationError(
+                    {"error": "Este correo no está registrado."})
+
             if user.is_active:
-                raise serializers.ValidationError({"error": "Esta cuenta ya ha sido activada."})
+                raise serializers.ValidationError(
+                    {"error": "Esta cuenta ya ha sido activada."})
 
         # Si el contexto es "registro", no se valida nada aquí (lo hace la vista de registro)
         return data
@@ -47,7 +53,7 @@ class EnviarCodigoVerificacionSerializer(serializers.Serializer):
         contexto = self.validated_data['contexto']
 
         # --- INICIO DE LÓGICA COMPARTIDA ---
-        
+
         # 1. Generamos un código de verificación (número aleatorio de 6 dígitos)
         verification_code = randint(100000, 999999)
 
@@ -69,7 +75,7 @@ class EnviarCodigoVerificacionSerializer(serializers.Serializer):
                 f"🔐 Tu código de recuperación es:\n\n"
                 f"{verification_code}\n\n"
             )
-        
+
         # Plantilla de mensaje completa sin importar la operación
         message = (
             f"Hola,\n\n"
@@ -88,7 +94,7 @@ class EnviarCodigoVerificacionSerializer(serializers.Serializer):
             [email],
             fail_silently=False,
         )
-        
+
         # --- FIN DE LÓGICA COMPARTIDA ---
 
         # Respuesta estándar

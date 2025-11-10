@@ -66,7 +66,7 @@ Para ejecutar comandos de Django, asegúrate de que los contenedores estén corr
 
 * **Ejecutar las pruebas automáticas**:
     ```bash
-    docker compose exec web python manage.py test
+    docker compose exec web python manage.py test gestion_academica.tests.tests
     ```
     **Ejecutar el loaddata**:
     ```bash
@@ -74,9 +74,9 @@ Para ejecutar comandos de Django, asegúrate de que los contenedores estén corr
     ```
     
 
----
-### Nota sobre los Comandos
-Este proyecto usa la sintaxis moderna de Docker Compose (V2).
+### Nota 
+
+El proyecto usa la sintaxis moderna de Docker Compose (V2)
 
 **Recomendado (V2):** `docker compose`
 

@@ -1,3 +1,5 @@
+# gestion_academica/views/auth_views/recuperar_username_view.py
+
 # Importaciones necesarias para esta vista
 from rest_framework import status, views
 from rest_framework.response import Response
@@ -7,19 +9,21 @@ from django.core.mail import send_mail
 from drf_yasg.utils import swagger_auto_schema
 from gestion_academica.serializers import RecuperarUsuarioSerializer
 
+
 class RecuperarUsuarioView(views.APIView):
     """
     Endpoint para que un usuario recupere su nombre de usuario
     a través de su email.
     """
     permission_classes = [AllowAny]
+
     @swagger_auto_schema(request_body=RecuperarUsuarioSerializer)
     def post(self, request, *args, **kwargs):
         serializer = RecuperarUsuarioSerializer(data=request.data)
-        
+
         if serializer.is_valid():
             usuario = serializer.validated_data['user']
-            
+
             # Prepara y envía el email
             subject = "Recuperación de nombre de usuario - Mapa de Carreras"
             message = (
@@ -32,7 +36,7 @@ class RecuperarUsuarioView(views.APIView):
                 f"Saludos,\n"
                 f"El equipo de Mapa de Carreras"
             )
-            
+
             send_mail(
                 subject,
                 message,
@@ -40,7 +44,7 @@ class RecuperarUsuarioView(views.APIView):
                 [usuario.email],
                 fail_silently=False,
             )
-            
+
             return Response({"message": "Hemos enviado tu nombre de usuario a tu correo electrónico."}, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

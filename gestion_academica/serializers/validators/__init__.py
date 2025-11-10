@@ -1,1 +1,1 @@
-from .validar_contrasena import validar_nueva_contraseña
+from .validar_nueva_contrasena import validar_nueva_contraseña

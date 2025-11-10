@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError, transaction
+from django.http import Http404
 
 from gestion_academica import models
 from gestion_academica.serializers.M2_gestion_docentes import DocenteSerializer, DocenteDetalleSerializer
@@ -34,6 +35,15 @@ class DocenteViewSet(viewsets.ModelViewSet):
         if qs.exists():
             raise ValidationError(
                 "El legajo ya se encuentra registrado por otro usuario.")
+
+    def get_object(self):
+        # pk es el usuario id --> /api/docentes/<usuario_id>
+        pk = self.kwargs.get(self.lookup_field)
+
+        try:
+            return models.Docente.objects.get(usuario__id=pk)
+        except models.Docente.DoesNotExist:
+            raise Http404("No se encontro el Docente")
 
     # def create(self, request, *args, **kwargs):
     #     '''
@@ -73,6 +83,65 @@ class DocenteViewSet(viewsets.ModelViewSet):
     #     out_serializer = self.get_serializer(instance)
     #     return Response(out_serializer.data, status=status.HTTP_201_CREATED)
 
+    def create(self, request, *args, **kwargs):
+        user = request.user
+        self._ensure_manage_permission(user)
+
+        data = request.data.copy()
+
+        usuario_id = data.get("usuario_id")
+        if not usuario_id:
+            return Response({"usuario_id": ["El campo usuario_id es obligatorio."]},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            usuario_obj = models.Usuario.objects.get(pk=usuario_id)
+        except models.Usuario.DoesNotExist:
+            return Response({"usuario_id": ["Usuario no encontrado."]},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        if hasattr(usuario_obj, "docente"):
+            return Response({"detail": "El usuario ya posee un perfil Docente."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        payload = {
+            "modalidad_id": data.get("modalidad_id"),
+            "caracter_id": data.get("caracter_id"),
+            "dedicacion_id": data.get("dedicacion_id"),
+            "cantidad_materias": data.get("cantidad_materias", 0),
+            "activo": data.get("activo", True)
+        }
+
+        # Filtrar None para que el serializer no intente validar claves nulas
+        payload = {k: v for k, v in payload.items() if v is not None}
+
+        serializer = self.get_serializer(data=payload)
+        serializer.is_valid(raise_exception=True)
+
+        validated = serializer.validated_data.copy()
+        validated["usuario"] = usuario_obj
+
+        try:
+            with transaction.atomic():
+                instance = models.Docente.objects.create(**validated)
+                try:
+                    rol_docente = models.Rol.objects.get(
+                        nombre__iexact="Docente")
+                    models.RolUsuario.objects.get_or_create(
+                        usuario=usuario_obj, rol=rol_docente)
+                except:
+                    pass
+
+        except IntegrityError as e:
+            return Response({"detail": f"Error de base de datos al crear docente: {str(e)}"},
+                            status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"detail": f"Error inesperado al crear docente: {str(e)}"},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        out_serializer = self.get_serializer(instance)
+        return Response(out_serializer.data, status=status.HTTP_201_CREATED)
+
     def _handle_update(self, request, partial):
         user = request.user
         self._ensure_manage_permission(user)
@@ -81,8 +150,7 @@ class DocenteViewSet(viewsets.ModelViewSet):
 
         # Campos permitidos
         allowed_fields = {
-            "legajo", "first_name", "last_name",
-            "email", "celular", "caracter_id", "modalidad_id", "dedicacion_id"
+            "cantidad_materias", "activo", "caracter_id", "modalidad_id", "dedicacion_id"
         }
 
         # Filtrar solo los campos válidos del request
@@ -93,13 +161,6 @@ class DocenteViewSet(viewsets.ModelViewSet):
                 {"detail": "No se enviaron campos válidos para actualizar."},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
-        # si cambian legajo validar unicidad
-        if "legajo" in data:
-            try:
-                self._validate_unique_legajo(data["legajo"], instance=instance)
-            except ValidationError as e:
-                return Response({"legajo": [str(e)]}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
@@ -134,7 +195,7 @@ class DocenteViewSet(viewsets.ModelViewSet):
 
         instance = self.get_object()
 
-        if not instance.is_active:
+        if not instance.activo:
             return Response(
                 {"detail": "El docente ya está deshabilitado."},
                 status=status.HTTP_400_BAD_REQUEST
@@ -142,7 +203,7 @@ class DocenteViewSet(viewsets.ModelViewSet):
 
         try:
             with transaction.atomic():
-                instance.is_active = False
+                instance.activo = False
                 instance.save()
         except IntegrityError as e:
             return Response({"detail": f"Error de base de datos al deshabilitar: {str(e)}"},
@@ -151,7 +212,9 @@ class DocenteViewSet(viewsets.ModelViewSet):
             return Response({"detail": f"Error inesperado al deshabilitar: {str(e)}"},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        return Response({"detail": f"Docente '{instance.username}' deshabilitado correctamente."},
+        usuario_display = getattr(
+            instance.usuario, "username", str(instance.usuario_id))
+        return Response({"detail": f"Docente '{usuario_display}' deshabilitado correctamente."},
                         status=status.HTTP_200_OK)
 
     def retrieve(self, request, *args, **kwargs):
@@ -164,7 +227,7 @@ class DocenteViewSet(viewsets.ModelViewSet):
 
         instance = self.get_object()
 
-        if not instance.is_active:
+        if not instance.activo:
             return Response(
                 {"detail": "El docente está deshabilitado y no puede visualizarse."},
                 status=status.HTTP_403_FORBIDDEN

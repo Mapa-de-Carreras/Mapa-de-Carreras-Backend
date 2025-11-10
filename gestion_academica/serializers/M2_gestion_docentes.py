@@ -72,6 +72,9 @@ class DocenteSerializer(serializers.ModelSerializer):
         allow_null=True
     )
 
+    usuario_id = serializers.IntegerField(source="usuario.id", read_only=True)
+    activo = serializers.BooleanField()
+
     # representaciones en lectura (simple PKs)
     modalidad = ModalidadSerializer(read_only=True)
     caracter = CaracterSerializer(read_only=True)
@@ -81,14 +84,15 @@ class DocenteSerializer(serializers.ModelSerializer):
         model = models.Docente
         # hereda todos los campos de Usuario mas los suyos
         fields = [
-            "id",
-            "modalidad", "modalidad_id", 
+            "id", "usuario_id",
+            "modalidad", "modalidad_id",
             "caracter", "caracter_id",
-            "dedicacion", "dedicacion_id", 
-            "cantidad_materias", "usuario_id"
+            "dedicacion", "dedicacion_id",
+            "cantidad_materias", "activo"
         ]
 
-        read_only_fields = ["modalidad", "caracter", "dedicacion"]
+        read_only_fields = ["modalidad",
+                            "caracter", "dedicacion", "usuario_id"]
 
     def update(self, instance, validated_data):
         '''Actualiza solo los campos permitidos'''

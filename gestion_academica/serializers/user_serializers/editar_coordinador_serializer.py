@@ -2,8 +2,7 @@ from rest_framework import serializers
 from django.utils import timezone
 from gestion_academica import models
 from .base_usuario_serializer import BaseUsuarioSerializer
-# Importamos los serializers que usaremos para mostrar datos
-from ..M1_gestion_academica import CarreraSerializer
+from gestion_academica.serializers import CarreraSerializerDetail
 
 class EditarCoordinadorSerializer(BaseUsuarioSerializer):
     """
@@ -44,7 +43,7 @@ class EditarCoordinadorSerializer(BaseUsuarioSerializer):
         carreras_activas = obj.carreras_coordinadas.filter(
             carreracoordinacion__activo=True
         )
-        return CarreraSerializer(carreras_activas, many=True).data
+        return CarreraSerializerDetail(carreras_activas, many=True).data
 
     def update(self, instance, validated_data):
         # 1. Obtenemos el objeto Coordinador

@@ -1,4 +1,4 @@
-from .editar_coordinador_serializer import EditarCoordinadorSerializer
-from .editar_docente_serializer import EditarDocenteSerializer
-from .editar_usuario_serializer import EditarUsuarioSerializer
-from .usuario_serializer import UsuarioSerializer, AdminUsuarioDetalleSerializer, CarreraCoordinacionSerializer, CoordinadorSerializer
+from .editar_coordinador_serializer import *
+from .editar_docente_serializer import *
+from .editar_usuario_serializer import *
+from .usuario_serializer import *

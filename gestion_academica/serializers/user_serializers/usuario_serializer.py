@@ -2,7 +2,7 @@ from django.utils import timezone
 from rest_framework import serializers
 from gestion_academica import models
 from .base_usuario_serializer import BaseUsuarioSerializer
-from ..M1_gestion_academica import CarreraSerializer
+from gestion_academica.serializers import CarreraSerializerDetail
 from ..validators import validar_nueva_contraseña
 
 class CaseInsensitiveSlugRelatedField(serializers.SlugRelatedField):

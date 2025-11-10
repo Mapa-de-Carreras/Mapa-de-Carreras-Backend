@@ -10,6 +10,8 @@ from .M2_gestion_docentes import (
     DocenteSerializer, ModalidadSerializer, DedicacionSerializer,
     CaracterSerializer, ParametrosRegimenSerializer
 )
+
+from .M3_designaciones_docentes import *
 from .auth_serializers.activar_cuenta_serializer import ActivarCuentaSerializer
 from .auth_serializers.enviar_codigo_verificacion_serializer import EnviarCodigoVerificacionSerializer
 from .auth_serializers.recuperar_username_serializer import RecuperarUsuarioSerializer

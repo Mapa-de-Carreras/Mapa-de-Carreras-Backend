@@ -85,43 +85,42 @@ class UsuarioSerializer(BaseUsuarioSerializer):
         return data
 
     def create(self, validated_data):
+        """
+        Crea un nuevo Usuario y sus perfiles de Docente/Coordinador
+        basado en los roles asignados.
+        """
+        
+        # 1. Extrae roles y contraseñas
         roles_data = validated_data.pop('roles', [])
-        validated_data.pop('old_password', None)
-        validated_data.pop('password2', None)
+        password = validated_data.pop('password')
+        validated_data.pop('password2', None) # Ya validado en .validate()
 
-        # 1. Comprobamos si el rol "Coordinador" está en los roles ingresados
-        es_coordinador = any(
-            rol.nombre.lower() == 'coordinador' for rol in roles_data
-        )
-
-        es_docente = any(
-            rol.nombre.lower() == 'docente' for rol in roles_data
-        )
-
-        if es_coordinador:
-            # Si es Coordinador, creamos un objeto Coordinador (Source 4)
-            model_manager = models.Coordinador.objects
-        elif es_docente:
-            # Si es Docente, creamos un objeto Docente
-            model_manager = models.Docente.objects
-        else:
-            # Si no, creamos un Usuario (Source 4) normal
-            model_manager = models.Usuario.objects
-
-        usuario = model_manager.create_user(
+        # 2. SIEMPRE crea un 'Usuario' base
+        # Usamos create_user para hashear la contraseña correctamente
+        # (Uso los campos de tu create original)
+        usuario = models.Usuario.objects.create_user(
             username=validated_data['username'],
-            password=validated_data['password'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name'],
-            email=validated_data['email'],
-            legajo=validated_data['legajo'],
-            celular=validated_data['celular'],
+            password=password,
+            first_name=validated_data.get('first_name', ''),
+            last_name=validated_data.get('last_name', ''),
+            email=validated_data.get('email', ''),
+            legajo=validated_data.get('legajo'),
+            celular=validated_data.get('celular'),
             fecha_nacimiento=validated_data.get('fecha_nacimiento', None),
-            is_active=False
+            is_active=False # El create original los ponía en False
         )
         
-        for rol in roles_data:
-            models.RolUsuario.objects.create(usuario=usuario, rol=rol)
+        # 3. Asigna los roles en la tabla RolUsuario
+        usuario.roles.set(roles_data)
+
+        # 4. Crea los perfiles vacíos si los roles existen
+        rol_nombres = [rol.nombre.lower() for rol in roles_data]
+        
+        if "docente" in rol_nombres:
+            models.Docente.objects.create(usuario=usuario, activo=True)
+            
+        if "coordinador" in rol_nombres:
+            models.Coordinador.objects.create(usuario=usuario, activo=True)
             
         return usuario
     

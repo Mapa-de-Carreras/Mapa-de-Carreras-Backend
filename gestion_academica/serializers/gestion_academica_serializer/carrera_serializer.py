@@ -6,18 +6,42 @@ from .instituto_serializer  import InstitutoSerializer
 
 class CarreraSerializerList(serializers.ModelSerializer):
     instituto = InstitutoSerializer(read_only=True)
+    coordinador_actual = serializers.SerializerMethodField()
    
     class Meta:
         model = Carrera
         fields = [
-            "id", "codigo", "nombre", "nivel", "esta_vigente", "created_at", "updated_at",'instituto'
+            "id", "codigo", "nombre", "nivel", "esta_vigente", "created_at", "updated_at",'instituto',"coordinador_actual"
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
+        
+    def get_coordinador_actual(self, obj):
+            coordinacion = (
+                CarreraCoordinacion.objects
+                .filter(carrera=obj, activo=True)
+                .select_related("coordinador__usuario")
+                .order_by("-fecha_inicio", "-created_at")
+                .first()
+            )
+
+            if not coordinacion or not coordinacion.coordinador:
+                return None
+
+            usuario = coordinacion.coordinador.usuario
+
+            return {
+                "id": usuario.id,
+                "username": usuario.username,
+                "nombre_completo": f"{usuario.first_name} {usuario.last_name}".strip(),
+                "email": usuario.email,
+                "fecha_inicio": coordinacion.fecha_inicio,
+            }
         
 class CarreraSerializerDetail(serializers.ModelSerializer):
     instituto = InstitutoSerializer(read_only=True)
     planes = serializers.SerializerMethodField()
     coordinador_actual = serializers.SerializerMethodField()
+    coordinadores_historial = serializers.SerializerMethodField()
 
     class Meta:
         model = Carrera
@@ -28,6 +52,7 @@ class CarreraSerializerDetail(serializers.ModelSerializer):
             "nivel",
             "esta_vigente",
             "coordinador_actual",
+            "coordinadores_historial",
             "instituto",
             "planes",
             "created_at",
@@ -42,32 +67,57 @@ class CarreraSerializerDetail(serializers.ModelSerializer):
         return PlanDeEstudioSerializerList(planes, many=True).data
 
     def get_coordinador_actual(self, obj):
-        """Devuelve el coordinador activo actual de la carrera."""
-        try:
-            # Buscamos el registro de coordinación más reciente y activo
             coordinacion = (
                 CarreraCoordinacion.objects
                 .filter(carrera=obj, activo=True)
+                .select_related("coordinador__usuario")
                 .order_by("-fecha_inicio", "-created_at")
-                .select_related("coordinador")
                 .first()
             )
 
-            if coordinacion and coordinacion.coordinador:
-                coord = coordinacion.coordinador
-                return {
-                    "id": coord.id,
-                    "username": coord.username,
-                    "nombre_completo": f"{coord.first_name} {coord.last_name}".strip(),
-                    "email": coord.email,
-                    "fecha_inicio": coordinacion.fecha_inicio,
-                }
-        except Exception as e:
-            # (opcional: útil en debug)
-            print(f"Error al obtener coordinador actual: {e}")
+            if not coordinacion or not coordinacion.coordinador:
+                return None
 
-        return None
+            usuario = coordinacion.coordinador.usuario
 
+            return {
+                "id": usuario.id,
+                "username": usuario.username,
+                "nombre_completo": f"{usuario.first_name} {usuario.last_name}".strip(),
+                "email": usuario.email,
+                "fecha_inicio": coordinacion.fecha_inicio,
+            }
+
+        # --------------------------
+        #  🔹 Historial coordinadores
+        # --------------------------
+    def get_coordinadores_historial(self, obj):
+            """
+            Devuelve todos los coordinadores (actuales e históricos) 
+            con sus fechas de inicio/fin y estado.
+            """
+            coordinaciones = (
+                CarreraCoordinacion.objects
+                .filter(carrera=obj)
+                .select_related("coordinador__usuario")
+                .order_by("-fecha_inicio")
+            )
+
+            historial = []
+            for c in coordinaciones:
+                usuario = c.coordinador.usuario
+                historial.append({
+                    "id": usuario.id,
+                    "username": usuario.username,
+                    "nombre_completo": f"{usuario.first_name} {usuario.last_name}".strip(),
+                    "email": usuario.email,
+                    "fecha_inicio": c.fecha_inicio,
+                    "fecha_fin": c.fecha_fin,
+                    "activo": c.activo,
+                })
+
+            return historial
+        
 class CarreraVigenciaUpdateSerializer(serializers.ModelSerializer):
     
     class Meta:

@@ -4,6 +4,7 @@ from rest_framework import status, viewsets
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.decorators import action
 from django.db import IntegrityError, transaction
 from django.http import Http404
 
@@ -35,6 +36,48 @@ class DocenteViewSet(viewsets.ModelViewSet):
         if qs.exists():
             raise ValidationError(
                 "El legajo ya se encuentra registrado por otro usuario.")
+
+    @action(detail=False, methods=["get"], url_path=r"carrera/(?P<carrera_id>\d+)")
+    def por_carrera(self, request, carrera_id=None):
+        """
+        Lista docentes relacionados con la carrera indicada.
+        Ruta: GET /api/docentes/carrera/{carrera_id}/
+        - Si el usuario es Coordinador, solo devuelve docentes de las carreras que coordina.
+        - Acepta ?activo=true|false para filtrar por activo.
+        """
+        user = request.user
+
+        # base queryset: Docentes que tienen designaciones en asignaturas de la carrera
+        qs = models.Docente.objects.filter(
+            designaciones__comision__asignatura__planes_de_estudio__carrera__id=carrera_id
+        ).distinct().order_by("id")
+
+        # si el query param activo viene, filtramos por ello
+        activo_param = request.query_params.get("activo")
+        if activo_param is not None:
+            if activo_param.lower() in ['true', '1', 't', 'yes']:
+                qs = qs.filter(activo=True)
+            elif activo_param.lower() in ['false', '0', 'f', 'no']:
+                qs = qs.filter(activo=False)
+
+        # si el user es Coordinador, limitar por sus carreras
+        if user.roles.filter(nombre__iexact="Coordinador").exists():
+            coord = models.Coordinador.objects.filter(usuario=user).first()
+            if coord:
+                carreras_qs = coord.carreras_coordinadas.all()
+                # si la carrera pedida no está en las que coordina -> 403
+                if not carreras_qs.filter(pk=carrera_id).exists():
+                    return Response({"detail": "No tiene permisos para ver docentes de esa carrera."},
+                                    status=status.HTTP_403_FORBIDDEN)
+                # opcional: ya filtrado arriba por carrera_id, así que no hace falta filtrar otra vez
+
+        page = self.paginate_queryset(qs)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def get_object(self):
         # pk es el usuario id --> /api/docentes/<usuario_id>

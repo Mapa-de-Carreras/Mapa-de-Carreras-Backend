@@ -1,5 +1,5 @@
 from .M1_gestion_academica import (
-    Instituto, Carrera, Resolucion, Asignatura,
+    Instituto, Carrera, Asignatura,
     PlanDeEstudio, PlanAsignatura, Correlativa, Documento
 )
 

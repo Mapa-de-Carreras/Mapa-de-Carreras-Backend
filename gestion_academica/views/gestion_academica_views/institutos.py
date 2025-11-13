@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from gestion_academica.serializers.M1_gestion_academica import InstitutoSerializer
+from gestion_academica.serializers import InstitutoSerializer
 from rest_framework.permissions import AllowAny
 from gestion_academica.permissions import EsAdministrador
 from gestion_academica.services.gestion_academica import institutos as instituto_service

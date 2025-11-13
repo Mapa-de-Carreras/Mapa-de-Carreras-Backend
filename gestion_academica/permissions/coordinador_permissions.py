@@ -1,26 +1,27 @@
 from rest_framework import permissions
-from gestion_academica.models import Coordinador, CarreraCoordinacion
+from gestion_academica.models import (
+    Coordinador,
+    CarreraCoordinacion,
+    Carrera,
+    PlanDeEstudio,
+    Comision,
+    Designacion
+)
+from rest_framework import serializers
+
 
 
 class EsCoordinadorDeCarrera(permissions.BasePermission):
-    """
-    Permite editar solo carreras que el usuario coordina actualmente.
-    """
-
-    def has_object_permission(self, request, view, obj):
+    
+   def has_permission(self, request, view):
+        """
+        Comprueba si el usuario está autenticado y tiene
+        un perfil de Coordinador activo.
+        """
         usuario = request.user
         
-        if not usuario.is_authenticated:
-            return False
-        
-        try:
-            coordinador = Coordinador.objects.get(id=usuario.id)
-        except Coordinador.DoesNotExist:
-            return False
-
-        return CarreraCoordinacion.objects.filter(
-            carrera=obj,
-            coordinador=coordinador,
-            activo=True
-        ).exists()
-
+        return (
+            usuario.is_authenticated and
+            hasattr(usuario, 'coordinador') and
+            usuario.coordinador.activo
+        )

@@ -5,7 +5,7 @@ from rest_framework.permissions import AllowAny, IsAdminUser
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
-from gestion_academica.serializers.M1_gestion_academica import AsignaturaSerializer
+from gestion_academica.serializers import AsignaturaSerializer
 from gestion_academica.services import asignaturas as asignatura_service
 
 class AsignaturaListCreateView(APIView):

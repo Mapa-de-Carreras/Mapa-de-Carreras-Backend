@@ -1,15 +1,13 @@
-# gestion_academica/tests/test_serializers.py
+# gestion_academica/tests/tests_serializers.py
 
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 
 from gestion_academica import models
-from gestion_academica.serializers.M1_gestion_academica import (
-    InstitutoSerializer, CarreraSerializer, ResolucionSerializer,
-    AsignaturaSerializer, DocumentoSerializer, PlanAsignaturaSerializer,
-    PlanDeEstudioSerializer, CorrelativaSerializer
-)
+
+from gestion_academica.serializers.gestion_academica_serializer import *
+
 from gestion_academica.serializers.M2_gestion_docentes import (
     CaracterSerializer, ModalidadSerializer, DedicacionSerializer,
     ParametrosRegimenSerializer, DocenteSerializer
@@ -19,8 +17,9 @@ from gestion_academica.serializers.M3_designaciones_docentes import (
 )
 from gestion_academica.serializers.M4_gestion_usuarios_autenticacion import (
     UsuarioSerializer, NotificacionSerializer, UsuarioNotificacionSerializer,
-    CarreraCoordinacionSerializer, CoordinadorSerializer, RolSerializer, RolUsuarioSerializer
+    RolSerializer, RolUsuarioSerializer
 )
+from gestion_academica.serializers.user_serializers.usuario_serializer import CoordinadorSerializer, CarreraCoordinacionSerializer
 
 
 User = get_user_model()
@@ -33,7 +32,7 @@ class SerializersIntegrationTests(TestCase):
             codigo="IDEI", nombre="Informática")
         self.carrera, _ = models.Carrera.objects.get_or_create(
             codigo="INF-GRADO", nombre="Ing. Informática", nivel="GRADO", instituto=self.instituto)
-        self.resolucion, _ = models.Resolucion.objects.get_or_create(
+        self.documento, _ = models.Documento.objects.get_or_create(
             tipo="CS", emisor="UNIV", numero=123, anio=2024)
 
         # catálogos docentes
@@ -57,11 +56,12 @@ class SerializersIntegrationTests(TestCase):
 
         # Usuario base
         self.usuario_payload = {
+            "username": "U100",
             "legajo": "U100",
-            "nombre": "User",
-            "apellido": "Test",
+            "first_name": "User",
+            "last_name": "Test",
             "email": "user.test@example.com",
-            "password": "pass1234"
+            "password": "Pass1234"
         }
 
     def test_instituto_carrera_serializers(self):
@@ -70,13 +70,13 @@ class SerializersIntegrationTests(TestCase):
         inst = s.save()
         self.assertEqual(inst.codigo, "INS1")
 
-        cs = CarreraSerializer(
+        cs = CarreraSerializerList(
             data={"codigo": "C1", "nombre": "Carrera 1", "nivel": "GRADO", "instituto_id": inst.id})
         self.assertTrue(cs.is_valid(), cs.errors)
         carrera = cs.save()
         self.assertEqual(carrera.instituto.id, inst.id)
 
-    def test_resolucion_asignatura_plan_documento(self):
+    def test_asignatura_plan_documento(self):
         # Asignatura (horas_totales calculadas)
         a_payload = {
             "codigo": "ALG1",
@@ -101,9 +101,8 @@ class SerializersIntegrationTests(TestCase):
         self.assertEqual(doc.anio, 2024)
 
         # PlanDeEstudio con PlanAsignatura (crear plan, luego plan-asignatura)
-        p_payload = {"fecha_inicio": "2024-01-01", "resolucion_id": self.resolucion.id,
-                     "carrera_id": self.carrera.id, "documento_id": doc.id}
-        s_plan = PlanDeEstudioSerializer(data=p_payload)
+        p_payload = {"fecha_inicio": "2024-01-01", "carrera_id": self.carrera.id, "documento_id": doc.id}
+        s_plan = PlanDeEstudioSerializerDetail(data=p_payload)
         self.assertTrue(s_plan.is_valid(), s_plan.errors)
         plan = s_plan.save()
 
@@ -137,20 +136,21 @@ class SerializersIntegrationTests(TestCase):
 
         # Crear Docente vía serializer (con password). Se usa legajo distinct para evitar conflicto.
         docente_payload = {
+            "username": "DOC1",
             "legajo": "DOC1",
-            "nombre": "Doc",
-            "apellido": "One",
+            "first_name": "Doc",
+            "last_name": "One",
             "email": "doc.one@example.com",
             "modalidad_id": self.modalidad.id,
             "caracter_id": self.caracter.id,
             "dedicacion_id": self.dedicacion.id,
-            "password": "docpass"
+            "password": "Pass1234"
         }
         s_docente = DocenteSerializer(data=docente_payload)
         self.assertTrue(s_docente.is_valid(), s_docente.errors)
         docente = s_docente.save()
         # docente debe tener contraseña usable
-        self.assertTrue(docente.check_password("docpass"))
+        self.assertTrue(docente.check_password("Pass1234"))
         self.assertEqual(docente.modalidad.id, self.modalidad.id)
 
         # Update docente (partial)
@@ -170,7 +170,7 @@ class SerializersIntegrationTests(TestCase):
             nombre="Com A", turno="MATUTINO", asignatura=asig1)
         # crear docente con create_user fallback si es necesario
         docente = models.Docente.objects.create_user(
-            legajo="DOC2", nombre="Doc2", apellido="Apellido", email="doc2@example.com", password="p")
+            username="DOC2", legajo="DOC2", first_name="Doc2", last_name="Apellido", email="doc2@example.com", password="p")
         # designacion crea y valida límite en clean()
         d_payload = {
             "fecha_inicio": "2024-03-01",
@@ -188,7 +188,7 @@ class SerializersIntegrationTests(TestCase):
     def test_notificacion_and_carrera_coordinacion(self):
         # crear creador
         creador = models.Usuario.objects.create_user(
-            legajo="U200", nombre="Creador", apellido="X", email="c@example.com", password="p")
+            username="U200", legajo="U200", first_name="Creador", last_name="X", email="c@example.com", password="p")
         # Notificacion
         notif_payload = {"titulo": "T1", "mensaje": "Hola",
                          "tipo": "INFO", "creado_por_id": creador.id}
@@ -204,7 +204,7 @@ class SerializersIntegrationTests(TestCase):
 
         # CarreraCoordinacion + CoordinadorSerializer
         coord = models.Coordinador.objects.create_user(
-            legajo="COORD1", nombre="Coord", apellido="C", email="coord@example.com", password="p")
+            username="COORD1", legajo="COORD1", first_name="Coord", last_name="C", email="coord@example.com", password="p")
         cc_payload = {"carrera_id": self.carrera.id,
                       "coordinador_id": coord.id, "creado_por_id": creador.id}
         s_cc = CarreraCoordinacionSerializer(data=cc_payload)
@@ -213,4 +213,5 @@ class SerializersIntegrationTests(TestCase):
         self.assertTrue(cc.activo)
         # CoordinadorSerializer read-only nested list present
         s_coord = CoordinadorSerializer(coord)
+
         self.assertIn('carreras_coordinadas', s_coord.data)

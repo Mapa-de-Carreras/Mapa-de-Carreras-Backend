@@ -1,3 +1,5 @@
+# gestion_academica/serializers/auth_serializers/__init__.py
+
 from .activar_cuenta_serializer import ActivarCuentaSerializer
 from .cambiar_contrasena_serializer import CambiarContrasenaSerializer
 from .enviar_codigo_verificacion_serializer import EnviarCodigoVerificacionSerializer

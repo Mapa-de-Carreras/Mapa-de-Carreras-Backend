@@ -1,0 +1,260 @@
+[
+    {
+        "model": "gestion_academica.rol",
+        "pk": 1,
+        "fields": {
+        "nombre": "Administrador",
+        "descripcion": "Acceso completo a todos los módulos y funcionalidades disponibles."
+        }
+    },
+    {
+        "model": "gestion_academica.rol",
+        "pk": 2,
+        "fields": {
+        "nombre": "Coordinador",
+        "descripcion": "Usuario con acceso a la información académica correspondiente a las carreras que coordina."
+        }
+    },
+    {
+        "model": "gestion_academica.rol",
+        "pk": 3,
+        "fields": {
+        "nombre": "Docente",
+        "descripcion": "Usuario con acceso a los módulos del sistema en modo consulta, con ciertas funciones habilitadas de acuerdo a su rol."
+        }
+    },
+    {
+        "model": "gestion_academica.rol",
+        "pk": 4,
+        "fields": {
+        "nombre": "Usuario General",
+        "descripcion": "Usuario con acceso de solo lectura a la información general del sistema."
+        }
+    },
+    {
+        "model": "gestion_academica.usuario",
+        "pk": 1,
+        "fields": {
+        "password": "pbkdf2_sha256$600000$demo$84JZp3eC4ZC3cNRhTzLZL9+uZ6+V4iI/ZgFhQLxP45o=",
+        "last_login": null,
+        "is_superuser": true,
+        "username": "admin",
+        "first_name": "Admin",
+        "last_name": "Principal",
+        "email": "admin@mgmail.com",
+        "is_staff": true,
+        "is_active": true,
+        "date_joined": "2025-01-01T00:00:00Z",
+        "legajo": "A0001",
+        "fecha_nacimiento": "1990-01-01",
+        "celular": "2901999999"
+        }
+    },
+    {
+        "model": "gestion_academica.usuario",
+        "pk": 2,
+        "fields": {
+        "password": "pbkdf2_sha256$600000$demo$84JZp3eC4ZC3cNRhTzLZL9+uZ6+V4iI/ZgFhQLxP45o=",
+        "last_login": null,
+        "is_superuser": false,
+        "username": "coordinador-sistemas",
+        "first_name": "Horacio",
+        "last_name": "Pendenti",
+        "email": "hpendenti@untdf.edu.ar",
+        "is_staff": true,
+        "is_active": true,
+        "date_joined": "2025-01-01T00:00:00Z",
+        "legajo": "C0001",
+        "fecha_nacimiento": "1985-03-15",
+        "celular": "2222222222"
+        }
+    },
+    {
+        "model": "gestion_academica.usuario",
+        "pk": 3,
+        "fields": {
+        "password": "pbkdf2_sha256$600000$demo$84JZp3eC4ZC3cNRhTzLZL9+uZ6+V4iI/ZgFhQLxP45o=",
+        "last_login": null,
+        "is_superuser": false,
+        "username": "coordinador-biologia",
+        "first_name": "Carolina",
+        "last_name": "Zimicz",
+        "email": "carolina@untdf.edu.ar",
+        "is_staff": true,
+        "is_active": true,
+        "date_joined": "2025-01-01T00:00:00Z",
+        "legajo": "C0002",
+        "fecha_nacimiento": "1987-05-10",
+        "celular": "2944542312"
+        }
+    },
+    {
+        "model": "gestion_academica.usuario",
+        "pk": 4,
+        "fields": {
+        "password": "pb932838AA",
+        "last_login": null,
+        "is_superuser": false,
+        "username": "juanperez",
+        "first_name": "Juan",
+        "last_name": "Perez",
+        "email": "juanperez@gmail.com",
+        "is_staff": false,
+        "is_active": true,
+        "date_joined": "2025-01-01T00:00:00Z",
+        "legajo": "U0001",
+        "fecha_nacimiento": "1987-05-10",
+        "celular": "2901112233"
+        }
+    },
+    {
+        "model": "gestion_academica.usuario",
+        "pk": 5,
+        "fields": {
+        "password": "123Aaa123",
+        "last_login": null,
+        "is_superuser": false,
+        "username": "daguil",
+        "first_name": "Daniel",
+        "last_name": "Aguil Mallea",
+        "email": "daguil@untdf.edu.ar",
+        "is_staff": true,
+        "is_active": true,
+        "date_joined": "2025-01-01T00:00:00Z",
+        "legajo": "U0002",
+        "fecha_nacimiento": "1987-05-10",
+        "celular": "2901132312"
+        }
+    },
+    {
+        "model": "gestion_academica.usuario",
+        "pk": 6,
+        "fields": {
+        "password": "123Aaa123",
+        "last_login": null,
+        "is_superuser": false,
+        "username": "caaguado",
+        "first_name": "Cintia Alejandra",
+        "last_name": "Aguado",
+        "email": "caaguado@untdf.edu.ar",
+        "is_staff": true,
+        "is_active": true,
+        "date_joined": "2025-01-01T00:00:00Z",
+        "legajo": "U0003",
+        "fecha_nacimiento": "1987-05-10",
+        "celular": "2901132312"
+        }
+    },
+    {
+        "model": "gestion_academica.rolusuario",
+        "pk": 1,
+        "fields": {
+        "usuario": 1,
+        "rol": 1
+        }
+    },
+    {
+        "model": "gestion_academica.rolusuario",
+        "pk": 2,
+        "fields": {
+        "usuario": 2,
+        "rol": 2
+        }
+    },
+    {
+        "model": "gestion_academica.rolusuario",
+        "pk": 3,
+        "fields": {
+        "usuario": 3,
+        "rol": 2
+        }
+    },
+    {
+        "model": "gestion_academica.rolusuario",
+        "pk": 4,
+        "fields": {
+        "usuario": 5,
+        "rol": 3
+        }
+    },
+    {
+        "model": "gestion_academica.rolusuario",
+        "pk": 5,
+        "fields": {
+        "usuario": 6,
+        "rol": 3
+        }
+    },
+    {
+        "model": "gestion_academica.rolusuario",
+        "pk": 6,
+        "fields": {
+        "usuario": 4,
+        "rol": 4
+        }
+    },
+    {
+        "model": "gestion_academica.notificacion",
+        "pk": 1,
+        "fields": {
+        "titulo": "Bienvenida al sistema",
+        "mensaje": "Su cuenta ha sido creada correctamente.",
+        "tipo": "INFO",
+        "creado_por": 1,
+        "fecha_creacion": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.usuarionotificacion",
+        "pk": 1,
+        "fields": {
+        "usuario": 2,
+        "notificacion": 1,
+        "leida": false,
+        "eliminado": false,
+        "created_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.coordinador",
+        "pk": 1,
+        "fields": {
+            "usuario": 2,
+            "activo": true
+    }
+    },
+    {
+        "model": "gestion_academica.coordinador",
+        "pk": 2,
+        "fields": {
+            "usuario": 3,
+            "activo": true
+        }
+    },
+    {
+        "model": "gestion_academica.carreracoordinacion",
+        "pk": 1,
+        "fields": {
+            "carrera": 1,
+            "coordinador": 1,
+            "fecha_inicio": "2025-01-01",
+            "fecha_fin": null,
+            "activo": true,
+            "creado_por": 1,
+            "created_at": "2025-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "gestion_academica.carreracoordinacion",
+        "pk": 2,
+        "fields": {
+            "carrera": 2,
+            "coordinador": 2,
+            "fecha_inicio": "2025-01-01",
+            "fecha_fin": null,
+            "activo": true,
+            "creado_por": 1,
+            "created_at": "2025-01-01T00:00:00Z"
+        }
+    }
+]

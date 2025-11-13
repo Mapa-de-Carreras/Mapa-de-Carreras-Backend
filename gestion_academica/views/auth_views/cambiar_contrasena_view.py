@@ -1,6 +1,6 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
-from ..serializers.auth_serializers import CambiarContrasenaSerializer
+from ...serializers.auth_serializers import CambiarContrasenaSerializer
 from rest_framework.permissions import IsAuthenticated
 from gestion_academica.models import Usuario
 

@@ -57,6 +57,7 @@ class Designacion(models.Model):
 
     fecha_inicio = models.DateTimeField(db_index=True)
     fecha_fin = models.DateTimeField(null=True, blank=True, db_index=True)
+    activo = models.BooleanField(default=True, db_index=True)
     tipo_designacion = models.CharField(
         max_length=20, choices=TIPO_DESIGNACION_CHOICES)
 
@@ -119,6 +120,6 @@ class Designacion(models.Model):
         if not regimen:
             return False
         designaciones_actuales = Designacion.objects.filter(
-            docente=self.docente, fecha_fin__isnull=True
+            docente=self.docente, activo=True
         ).exclude(pk=self.pk)
         return designaciones_actuales.count() >= regimen.max_asignaturas

@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'drf_yasg',                                 # Para Swagger
     'corsheaders',
     'django_filters',  # Para filtrar datos
+    'django_apscheduler', # Para automatizar tareas
 ]
 
 MIDDLEWARE = [

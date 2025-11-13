@@ -29,7 +29,7 @@ class Command(BaseCommand):
             call_command('loaddata', 'gestion_academica/fixtures/data_gestion_academica_correlativas.json')
             self.stdout.write(self.style.SUCCESS("Datos iniciales de CORRELATIVAS cargados ✅"))
 
-            call_command('loaddata', 'gestion_academica/fixtures/data_gestion_usuarios_inicial.json')
+            call_command('loaddata', 'gestion_academica/fixtures/data_gestion_usuarios.json')
             self.stdout.write(self.style.SUCCESS("Datos iniciales de gestión de usuarios cargados ✅"))
         except Exception as e:
             self.stderr.write(self.style.ERROR(f"Error al cargar fixtures: {e}"))

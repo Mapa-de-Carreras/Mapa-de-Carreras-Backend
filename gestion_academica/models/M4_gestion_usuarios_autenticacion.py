@@ -101,9 +101,10 @@ class UsuarioNotificacion(models.Model):
         "Usuario", on_delete=models.CASCADE, related_name="usuario_notificaciones")
     notificacion = models.ForeignKey(
         Notificacion, on_delete=models.CASCADE, related_name="destinatarios")
-    leida = models.BooleanField(default=False)
     fecha_leida = models.DateTimeField(null=True, blank=True)
+    fecha_recordatorio = models.DateTimeField(null=True, blank=True)
     eliminado = models.BooleanField(default=False)
+    leida = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -127,8 +128,8 @@ class CarreraCoordinacion(models.Model):
     """
     carrera = models.ForeignKey(Carrera, on_delete=models.CASCADE)
     coordinador = models.ForeignKey("Coordinador", on_delete=models.CASCADE)    
-    fecha_inicio = models.DateField(default=timezone.now)
-    fecha_fin = models.DateField(null=True, blank=True)
+    fecha_inicio = models.DateTimeField(default=timezone.now)
+    fecha_fin = models.DateTimeField(null=True, blank=True)
     activo = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     creado_por = models.ForeignKey(Usuario, on_delete=models.SET_NULL,

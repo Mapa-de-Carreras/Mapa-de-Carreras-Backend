@@ -1,7 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny,IsAuthenticated
+from rest_framework.permissions import AllowAny
+from gestion_academica.permissions import EsAdministrador
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from gestion_academica.services.gestion_academica import carreras as carrera_service
@@ -13,7 +14,7 @@ class CarreraListCreateView(APIView):
 
     def get_permissions(self):
         if self.request.method == 'POST':
-            return [IsAuthenticated]
+            return [EsAdministrador()]
         return [AllowAny()]
 
     # Definimos los parámetros de filtro para Swagger
@@ -94,7 +95,7 @@ class CarreraDetailView(APIView):
 
     def get_permissions(self):
         if self.request.method in ['PUT', 'PATCH', 'DELETE']:
-            return [IsAuthenticated]
+            return [EsAdministrador()]
         return [AllowAny()]
 
     # ------------------------------
@@ -169,7 +170,7 @@ class CarreraVigenciaUpdateView(APIView):
     """
 
     def get_permissions(self):
-        return [IsAuthenticated]
+        return [EsAdministrador()]
 
     @swagger_auto_schema(
         tags=["Gestión Académica - Carreras"],

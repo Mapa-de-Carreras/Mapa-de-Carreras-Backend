@@ -4,6 +4,7 @@ from rest_framework import status, viewsets
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.decorators import action
 from django.db import IntegrityError, transaction
 from django.http import Http404
 
@@ -35,6 +36,66 @@ class DocenteViewSet(viewsets.ModelViewSet):
         if qs.exists():
             raise ValidationError(
                 "El legajo ya se encuentra registrado por otro usuario.")
+
+    @action(detail=False, methods=["get"], url_path=r"carrera/(?P<carrera_id>\d+)")
+    def por_carrera(self, request, carrera_id=None):
+        """
+        Lista docentes relacionados con la carrera indicada.
+        Ruta: GET /api/docentes/carrera/{carrera_id}/
+        Comportamiento actual:
+          - Devuelve docentes que tienen alguna designación cuyo plan de estudio pertenece a la carrera.
+          - Filtra por plan vigente (esta_vigente=True) para evitar planes antiguos.
+          - Esto puede devolver el mismo docente para varias carreras si la misma asignatura
+            está presente en los planes de varias carreras.
+
+        Otra alternativa - SOLO designaciones activas:
+          - Si queremos devolver solo docentes con designaciones activas,
+            usar la query alternativa que aparece comentada más abajo.
+        """
+        user = request.user
+
+        # base queryset: Docentes que tienen designaciones en asignaturas de la carrera
+        # filtra por plan vigente para evitar duplicados por planes antiguos
+        qs = models.Docente.objects.filter(
+            designaciones__comision__asignatura__planes_de_estudio__carrera__id=carrera_id,
+            designaciones__comision__asignatura__planes_de_estudio__esta_vigente=True
+        ).distinct().order_by("id")
+
+        # otra alternativa
+        # devolver solo docentes con designación actualmente activa, para saber quien actualmente da clases.
+        # qs = models.Docente.objects.filter(
+        #     designaciones__comision__asignatura__planes_de_estudio__carrera__id=carrera_id,
+        #     designaciones__comision__asignatura__planes_de_estudio__esta_vigente=True,
+        #     designaciones__fecha_fin__isnull=True,   # <-- solo activas
+        # ).distinct().order_by("id")
+
+        # filtra por query param activo si viene
+        activo_param = request.query_params.get("activo")
+        if activo_param is not None:
+            if activo_param.lower() in ['true', '1', 't', 'yes']:
+                qs = qs.filter(activo=True)
+            elif activo_param.lower() in ['false', '0', 'f', 'no']:
+                qs = qs.filter(activo=False)
+
+        # si el user es Coordinador, limitar por sus carreras
+        if user.roles.filter(nombre__iexact="Coordinador").exists():
+            coord = models.Coordinador.objects.filter(usuario=user).first()
+            if coord:
+                carreras_qs = coord.carreras_coordinadas.all()
+                if not carreras_qs.filter(pk=carrera_id).exists():
+                    return Response({"detail": "No tiene permisos para ver docentes de esa carrera."},
+                                    status=status.HTTP_403_FORBIDDEN)
+
+        page = self.paginate_queryset(qs)
+        serializer_class = DocenteSerializer
+        if page is not None:
+            serializer = serializer_class(
+                page, many=True, context={"request": request})
+            return self.get_paginated_response(serializer.data)
+
+        serializer = serializer_class(
+            qs, many=True, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def get_object(self):
         # pk es el usuario id --> /api/docentes/<usuario_id>

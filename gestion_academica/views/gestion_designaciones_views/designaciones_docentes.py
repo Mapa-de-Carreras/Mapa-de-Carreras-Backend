@@ -18,7 +18,12 @@ class DesignacionViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     # cargos primarios que una asignatura debe tener, al menos una
-    PRIMARY_CARGOS = {"Titular", "Asociado", "Adjunto"}
+    REQUIRED_PRIMARY = {"titular", "asociado", "adjunto"}
+    OPTIONAL_CARGOS = {"asistente principal",
+                       "asistente de 1ra",
+                       "asistente de 2da",
+                       "viajero",
+                       "contratado"}
 
     def _user_can_manage(self, user):
         return user.is_superuser or user.roles.filter(nombre__in=["Admin", "Coordinador"]).exists()
@@ -97,6 +102,13 @@ class DesignacionViewSet(viewsets.ModelViewSet):
         """
         user = request.user
         qs = self.get_queryset()
+
+        activo_param = request.query_params.get("activo")
+        if activo_param is not None:
+            if activo_param.lower() in ['true', '1', 't', 'yes']:
+                qs = qs.filter(activo=True)
+            elif activo_param.lower() in ['false', '0', 'f', 'no']:
+                qs = qs.filter(activo=False)
 
         # si es coordinador, limitar por sus carreras
         if user.roles.filter(nombre__iexact="Coordinador").exists():
@@ -189,7 +201,7 @@ class DesignacionViewSet(viewsets.ModelViewSet):
 
         # advertencia por sobrecarga (no impide creación)
         actuales = models.Designacion.objects.filter(
-            docente=docente, fecha_fin__isnull=True).count()
+            docente=docente, activo=True).count()
         warning = None
         if regimen_obj and actuales >= regimen_obj.max_asignaturas:
             warning = f"Advertencia: el docente tiene {actuales} designaciones activas; máximo según régimen: {regimen_obj.max_asignaturas}."
@@ -201,7 +213,8 @@ class DesignacionViewSet(viewsets.ModelViewSet):
                     creado_por=user,
                     regimen=regimen_obj,
                     dedicacion=dedicacion_obj,
-                    modalidad=modalidad_obj
+                    modalidad=modalidad_obj,
+                    activo=True
                 )
         except IntegrityError as e:
             return Response({"detail": f"Error de base de datos: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
@@ -227,6 +240,16 @@ class DesignacionViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
 
+        validated = serializer.validated_data.copy()
+
+        if 'fecha_fin' in validated:
+            if validated.get('fecha_fin') is None:
+                # reabrir/designacion activa
+                validated['activo'] = True
+            else:
+                # cerrar/designacion inactiva
+                validated['activo'] = False
+
         docente = serializer.validated_data.get("docente", instance.docente)
         comision = serializer.validated_data.get("comision", instance.comision)
         cargo = serializer.validated_data.get("cargo", instance.cargo)
@@ -234,6 +257,17 @@ class DesignacionViewSet(viewsets.ModelViewSet):
             "fecha_inicio", instance.fecha_inicio)
         fecha_fin = serializer.validated_data.get(
             "fecha_fin", instance.fecha_fin)
+
+        # si la actualización implica cerrar la designación (fecha_fin != None)
+        # debemos verificar que la asignatura mantenga al menos un cargo primario activo
+        if 'fecha_fin' in validated and validated.get('fecha_fin') is not None:
+            # comision ya fue resuelto arriba (puede ser new o el existing)
+            # Si la comprobación falla, devolvemos 400 y no guardamos.
+            if not self._asignatura_tiene_cargo_primary_si_excluyo(comision, excluir_designacion_pk=instance.pk):
+                return Response(
+                    {"detail": "No es posible finalizar esta designación: dejaría a la asignatura sin ningún docente con cargo Titular/Asociado/Adjunto (u otro cargo primario requerido)."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
         # evitar duplicado/solapamiento en misma comisión
         qs_misma_comision = models.Designacion.objects.filter(
@@ -280,7 +314,7 @@ class DesignacionViewSet(viewsets.ModelViewSet):
 
         # advertencia por sobrecarga: contamos designaciones activas excluyendo esta instancia si estaba activa
         actuales_qs = models.Designacion.objects.filter(
-            docente=docente, fecha_fin__isnull=True).exclude(pk=instance.pk)
+            docente=docente, activo=True).exclude(pk=instance.pk)
         actuales = actuales_qs.count()
         warning = None
         if regimen_obj and actuales >= regimen_obj.max_asignaturas:
@@ -289,7 +323,11 @@ class DesignacionViewSet(viewsets.ModelViewSet):
         try:
             with transaction.atomic():
                 updated = serializer.save(
-                    regimen=regimen_obj, dedicacion=dedicacion_obj, modalidad=modalidad_obj)
+                    regimen=regimen_obj,
+                    dedicacion=dedicacion_obj,
+                    modalidad=modalidad_obj,
+                    **({'activo': validated['activo']} if 'activo' in validated else {})
+                )
         except IntegrityError as e:
             return Response({"detail": f"Error de base de datos: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
@@ -312,53 +350,56 @@ class DesignacionViewSet(viewsets.ModelViewSet):
         """
         return self._handle_update(request, partial=True)
 
-    # FALTA IMPLEMENTAR LA RF 3.2.2 ELIMINAR DESIGNACION
+    def _asignatura_tiene_cargo_primary_si_excluyo(self, comision, excluir_designacion_pk=None):
+        """
+        Verifica si la asignatura asociada a 'comision' seguirá teniendo al menos
+        una designación activa con cargo en PRIMARY_CARGOS si excluimos la designación
+        con pk = excluir_designacion_pk (útil antes de cerrar/eliminar).
+        """
+        asignatura = comision.asignatura
+        qs = models.Designacion.objects.filter(
+            comision__asignatura=asignatura,
+            activo=True
+        )
+        if excluir_designacion_pk:
+            qs = qs.exclude(pk=excluir_designacion_pk)
 
-    # def _asignatura_tiene_cargo_primary_si_excluyo(self, comision, excluir_designacion_pk=None):
-    #     """
-    #     Verifica si la asignatura asociada a 'comision' seguirá teniendo al menos
-    #     una designación activa con cargo en PRIMARY_CARGOS si excluimos la designación
-    #     con pk = excluir_designacion_pk (útil antes de cerrar/eliminar).
-    #     """
-    #     asignatura = comision.asignatura
-    #     qs = models.Designacion.objects.filter(
-    #         comision__asignatura=asignatura,
-    #         fecha_fin__isnull=True
-    #     )
-    #     if excluir_designacion_pk:
-    #         qs = qs.exclude(pk=excluir_designacion_pk)
+        # obtenemos los nombres de cargo activos y comparamos en lower()
+        nombres = qs.values_list('cargo__nombre', flat=True)
+        for nombre in nombres:
+            if nombre and nombre.lower() in self.REQUIRED_PRIMARY:
+                return True
+        return False
 
-    #     # comprobar existencia de al menos una designación activa con cargo primario
-    #     return qs.filter(cargo__nombre__in=self.PRIMARY_CARGOS).exists()
+    def destroy(self, request, *args, **kwargs):
+        """
+        No hacemos hard delete para conservar historial.
+        Implementación: si fecha_fin es NULL -> la cerramos poniendo fecha_fin = today().
+        Si ya tiene fecha_fin -> devolvemos 400 indicando que ya está finalizada.
+        """
+        user = request.user
+        self._ensure_manage_permission(user)
 
-    # def destroy(self, request, *args, **kwargs):
-    #     """
-    #     No hacemos hard delete para conservar historial.
-    #     Implementación: si fecha_fin es NULL -> la cerramos poniendo fecha_fin = today().
-    #     Si ya tiene fecha_fin -> devolvemos 400 indicando que ya está finalizada.
-    #     """
-    #     user = request.user
-    #     self._ensure_manage_permission(user)
+        instance = self.get_object()
+        if not instance.activo:
+            return Response({"detail": "La designación ya está inactiva."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-    #     instance = self.get_object()
-    #     if instance.fecha_fin is not None:
-    #         return Response({"detail": "La designación ya tiene fecha de fin (ya finalizada)."},
-    #                         status=status.HTTP_400_BAD_REQUEST)
+        # verificar que al cerrar esta designación la asignatura mantenga al menos un cargo primario
+        if not self._asignatura_tiene_cargo_primary_si_excluyo(instance.comision, excluir_designacion_pk=instance.pk):
+            return Response(
+                {"detail": "No es posible finalizar esta designación: dejaría a la asignatura sin ningún docente con cargo Titular/Asociado/Adjunto."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-    #     # verificar que al cerrar esta designación la asignatura mantenga al menos un cargo primario
-    #     if not self._asignatura_tiene_cargo_primary_si_excluyo(instance.comision, excluir_designacion_pk=instance.pk):
-    #         return Response(
-    #             {"detail": "No es posible finalizar esta designación: dejaría a la asignatura sin ningún docente con cargo Titular/Asociado/Adjunto."},
-    #             status=status.HTTP_400_BAD_REQUEST
-    #         )
+        try:
+            with transaction.atomic():
+                instance.fecha_fin = dj_timezone.now()
+                instance.activo = False
+                instance.save()
+        except IntegrityError as e:
+            return Response({"detail": f"Error de base de datos: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"detail": f"Error inesperado: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    #     try:
-    #         with transaction.atomic():
-    #             instance.fecha_fin = date.today()
-    #             instance.save()
-    #     except IntegrityError as e:
-    #         return Response({"detail": f"Error de base de datos: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
-    #     except Exception as e:
-    #         return Response({"detail": f"Error inesperado: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    #     return Response({"detail": "Designación finalizada correctamente (fecha_fin establecida)."}, status=status.HTTP_200_OK)
+        return Response({"detail": "Designación finalizada correctamente (fecha_fin establecida)."}, status=status.HTTP_200_OK)

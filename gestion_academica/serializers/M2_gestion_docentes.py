@@ -147,9 +147,12 @@ class DocenteSerializer(serializers.ModelSerializer):
 
 
 class DocenteDetalleSerializer(serializers.ModelSerializer):
-    modalidad = serializers.StringRelatedField()
-    dedicacion = serializers.StringRelatedField()
-    caracter = serializers.StringRelatedField()
+
+    usuario = UsuarioLiteSerializer(read_only=True)
+
+    modalidad = serializers.StringRelatedField(read_only=True)
+    dedicacion = serializers.StringRelatedField(read_only=True)
+    caracter = serializers.StringRelatedField(read_only=True)
 
     # Se traen las designaciones relacionadas
     designaciones = serializers.SerializerMethodField()
@@ -157,8 +160,7 @@ class DocenteDetalleSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Docente
         fields = [
-            "id", "legajo", "username", "first_name", "last_name", "email",
-            "celular", "modalidad", "dedicacion", "caracter", "cantidad_materias",
+            "id", "usuario", "modalidad", "dedicacion", "caracter", "cantidad_materias",
             "designaciones"
         ]
 

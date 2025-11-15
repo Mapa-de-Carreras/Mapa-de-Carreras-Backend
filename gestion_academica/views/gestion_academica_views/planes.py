@@ -2,12 +2,13 @@
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status, permissions
+from rest_framework import status
+from rest_framework.permissions import AllowAny
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from gestion_academica.serializers import PlanDeEstudioSerializerList,PlanDeEstudioSerializerDetail,PlanDeEstudioCreateUpdateSerializer,PlanDeEstudioVigenciaSerializer,PlanAsignaturaSerializer,CorrelativaCreateSerializer,CorrelativaSerializer
 from gestion_academica.services import plan_de_estudio
-#from gestion_academica.permissions.roles_permisos import EsAdministrador, EsCoordinadorDeCarrera
+from gestion_academica.permissions import EsAdministrador
 
 
 class PlanDeEstudioListCreateView(APIView):
@@ -15,8 +16,8 @@ class PlanDeEstudioListCreateView(APIView):
 
     def get_permissions(self):
         if self.request.method == "POST":
-            return [permissions.IsAuthenticated()]
-        return [permissions.AllowAny()]
+            return [EsAdministrador()]
+        return [AllowAny()]
 
     @swagger_auto_schema(
         tags=["Gestión Académica - Planes de Estudio"],
@@ -54,8 +55,8 @@ class PlanDeEstudioDetailView(APIView):
 
     def get_permissions(self):
         if self.request.method in ["PUT", "PATCH", "DELETE"]:
-            return [permissions.IsAuthenticated()]
-        return [permissions.AllowAny()]
+            return [EsAdministrador()]
+        return [AllowAny()]
 
     @swagger_auto_schema(
         tags=["Gestión Académica - Planes de Estudio"],
@@ -104,7 +105,7 @@ class PlanDeEstudioVigenciaView(APIView):
     """Cambiar la vigencia de un Plan de Estudio"""
 
     def get_permissions(self):
-        return [permissions.IsAuthenticated()]
+        return [EsAdministrador()]
 
     @swagger_auto_schema(
         tags=["Gestión Académica - Planes de Estudio"],
@@ -145,7 +146,7 @@ class AsociarAsignaturaAPlanView(APIView):
     Asocia una Asignatura a un Plan de Estudio existente.
     """
 
-    permission_classes = [permissions.IsAuthenticated]  # Podrías luego restringir a coordinador/admin
+    permission_classes = [EsAdministrador()]  # Podrías luego restringir a coordinador/admin
 
     @swagger_auto_schema(
         tags=["Gestión Académica - Planes de Estudio"],
@@ -180,7 +181,7 @@ class DesasociarAsignaturaDePlanView(APIView):
     Elimina la asociación entre una Asignatura y un Plan de Estudio.
     """
 
-    permission_classes = [permissions.IsAuthenticated]  # Luego podés usar EsAdministrador | EsCoordinadorDeCarrera
+    permission_classes = [EsAdministrador()]  # Luego podés usar EsAdministrador | EsCoordinadorDeCarrera
 
     @swagger_auto_schema(
         tags=["Gestión Académica - Planes de Estudio"],
@@ -224,7 +225,7 @@ class DesasociarAsignaturaDePlanView(APIView):
 
 class ListarCorrelativasDeAsignaturaView(APIView):
     """Lista todas las correlativas de una asignatura dentro de un plan."""
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [EsAdministrador()]
 
     @swagger_auto_schema(
         manual_parameters=[
@@ -260,7 +261,7 @@ class AsignarCorrelativaView(APIView):
     Asigna una correlativa a una asignatura dentro de un mismo plan de estudio.
     """
 
-    permission_classes = [permissions.IsAuthenticated]  # luego se puede cambiar por EsAdministrador | EsCoordinadorDeCarrera
+    permission_classes = [EsAdministrador()]  # luego se puede cambiar por EsAdministrador | EsCoordinadorDeCarrera
 
     @swagger_auto_schema(
         request_body=CorrelativaCreateSerializer,
@@ -295,7 +296,7 @@ class EliminarCorrelativaView(APIView):
     Elimina una correlativa específica del plan de estudio.
     """
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [EsAdministrador()]
 
     @swagger_auto_schema(
         tags=["Gestión Académica - Planes de Estudio"],

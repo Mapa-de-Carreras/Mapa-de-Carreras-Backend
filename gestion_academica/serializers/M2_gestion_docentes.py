@@ -42,7 +42,7 @@ class ParametrosRegimenSerializer(serializers.ModelSerializer):
             "id", "modalidad", "dedicacion",
             "modalidad_id", "dedicacion_id",
             "horas_max_frente_alumnos", "horas_min_frente_alumnos",
-            "horas_max_actual", "horas_min_actual", "activo",
+            "horas_max_anual", "horas_min_anual", "activo",
             "max_asignaturas"
         ]
 
@@ -122,10 +122,22 @@ class DocenteSerializer(serializers.ModelSerializer):
         Devuelve lista de carreras (id, nombre) relacionadas al docente
         por las designaciones -> comision -> asignatura -> planes_de_estudio -> carrera.
         """
+        from django.db.models import Q
+        from django.utils import timezone
+        hoy = timezone.now()
         # obtenemos PlanDeEstudio relacionados con asignaturas que tienen comisiones con designaciones del docente
         planes_qs = models.PlanDeEstudio.objects.filter(
-            planasignatura__asignatura__comisiones__designaciones__docente=obj,
-            esta_vigente=True
+            # La ruta corregida:
+            Q(planasignatura__comisiones__designaciones__fecha_fin__isnull=True) |
+            Q(planasignatura__comisiones__designaciones__fecha_fin__gt=hoy),
+            planasignatura__comisiones__designaciones__docente=obj,
+            
+            # Solo de planes vigentes
+            esta_vigente=True,
+            
+            # Solo de designaciones activAS
+            planasignatura__comisiones__designaciones__activo=True,            
+            
         ).distinct().select_related('carrera')
 
         # convertir a lista de dicts con id/nombre de carrera (distinct)

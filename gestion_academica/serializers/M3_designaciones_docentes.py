@@ -11,7 +11,8 @@ User = get_user_model()
 
 
 class ComisionSerializer(serializers.ModelSerializer):
-    asignatura_nombre = serializers.CharField(source="asignatura.nombre", read_only=True)
+    asignatura_nombre = serializers.CharField(
+        source="asignatura.nombre", read_only=True)
 
     class Meta:
         model = models.Comision
@@ -29,10 +30,12 @@ class ComisionCreateUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Comision
-        fields = ["nombre", "turno", "promocionable", "activo", "asignatura_id"]
+        fields = ["nombre", "turno", "promocionable",
+                  "activo", "asignatura_id"]
 
     def validate(self, data):
-        asignatura = data.get("asignatura") or getattr(self.instance, "asignatura", None)
+        asignatura = data.get("asignatura") or getattr(
+            self.instance, "asignatura", None)
         nombre = data.get("nombre") or getattr(self.instance, "nombre", None)
 
         if models.Comision.objects.filter(
@@ -112,6 +115,8 @@ class DesignacionSerializer(serializers.ModelSerializer):
     regimen = ParametrosRegimenSerializer(read_only=True)
     cargo = CargoSerializer(read_only=True)
 
+    activo = serializers.BooleanField(read_only=True)
+
     class Meta:
         model = models.Designacion
         fields = [
@@ -119,10 +124,10 @@ class DesignacionSerializer(serializers.ModelSerializer):
             "docente", "docente_id", "comision", "comision_id",
             "regimen", "regimen_id", "cargo", "cargo_id", "observacion", "documento", "documento_id",
             "dedicacion_id", "modalidad_id", "creado_por", "created_at",
-            "updated_at"
+            "updated_at", "activo"
         ]
         read_only_fields = ["creado_por",
-                            "created_at", "updated_at", "regimen"]
+                            "created_at", "updated_at", "regimen", "activo"]
 
     def validate(self, data):
         inicio = data.get("fecha_inicio")

@@ -1,7 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.permissions import AllowAny
+from gestion_academica.permissions import EsAdministrador
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from gestion_academica.serializers import AsignaturaSerializer,AsignaturaConCorrelativasSerializer
@@ -13,7 +14,7 @@ class AsignaturaListCreateView(APIView):
 
     def get_permissions(self):
         if self.request.method == "POST":
-            return [IsAdminUser()]
+            return [EsAdministrador()]
         return [AllowAny()]
 
     # --- Parámetro de filtro para Swagger ---
@@ -77,7 +78,7 @@ class AsignaturaDetailView(APIView):
 
     def get_permissions(self):
         if self.request.method in ["PUT", "DELETE"]:
-            return [IsAdminUser()]
+            return [EsAdministrador()]
         return [AllowAny()]
 
     @swagger_auto_schema(

@@ -26,6 +26,7 @@ class DesignacionViewSet(viewsets.ModelViewSet):
                        "contratado"}
 
     def _user_can_manage(self, user):
+        """Retorna True si el usuario es superuser o tiene rol Admin/Coordinador."""
         return user.is_superuser or user.roles.filter(nombre__in=["Admin", "Coordinador"]).exists()
 
     def _ensure_manage_permission(self, user):
@@ -87,13 +88,35 @@ class DesignacionViewSet(viewsets.ModelViewSet):
 
     def _coordinador_de_usuario(self, user):
         """
-        Si el user es Coordinador devuelve la instancia Coordinador (subclase de Usuario)
-        o None si no se encuentra.
+        Devuelve la instancia Coordinador asociada al `user`, o None si no existe.
+        Encapsula la consulta para usarla desde otras funciones.
         """
         try:
             return models.Coordinador.objects.filter(usuario=user).first()
         except Exception:
             return None
+
+    def get_object(self):
+        obj = super().get_object()  # obtiene el objeto real
+
+        user = self.request.user
+
+        # Si es coordinador, verificar si pertenece a sus carreras coordinadas
+        if user.roles.filter(nombre__iexact="Coordinador").exists():
+            coord = models.Coordinador.objects.filter(usuario=user).first()
+
+            if coord:
+                pertenece = obj.comision.asignatura.planes_de_estudio.filter(
+                    carrera__in=coord.carreras_coordinadas.all(),
+                    esta_vigente=True
+                ).exists()
+
+                if not pertenece:
+                    raise PermissionDenied(
+                        detail="No tiene permisos para acceder a esta designación."
+                    )
+
+        return obj
 
     def list(self, request, *args, **kwargs):
         """
@@ -112,6 +135,7 @@ class DesignacionViewSet(viewsets.ModelViewSet):
 
         # si es coordinador, limitar por sus carreras
         if user.roles.filter(nombre__iexact="Coordinador").exists():
+            # obtener el objeto Coordinador asociado al usuario.
             coord = self._coordinador_de_usuario(user)
             if coord:
                 carreras_qs = coord.carreras_coordinadas.all()
@@ -149,6 +173,23 @@ class DesignacionViewSet(viewsets.ModelViewSet):
         cargo = serializer.validated_data.get("cargo")
         fecha_inicio = serializer.validated_data.get("fecha_inicio")
         fecha_fin = serializer.validated_data.get("fecha_fin")
+
+        # comprobar permiso de coordinador
+        if user.roles.filter(nombre__iexact="Coordinador").exists():
+            # obtener el objeto Coordinador asociado al usuario.
+            coord = self._coordinador_de_usuario(user)
+            if coord is None:
+                return Response({"detail": "Perfil de Coordinador no encontrado."}, status=status.HTTP_403_FORBIDDEN)
+
+            # busca si existe al menos un PlanDeEstudio VIGENTE
+            # para la asignatura de la comisión cuyo campo 'carrera' esté en las carreras coordinadas.
+            pertenece = comision.asignatura.planes_de_estudio.filter(
+                carrera__in=coord.carreras_coordinadas.all(),
+                esta_vigente=True
+            ).exists()
+            if not pertenece:
+                return Response({"detail": "No tiene permisos para crear designaciones en esa asignatura/carrera."},
+                                status=status.HTTP_403_FORBIDDEN)
 
         # evitar duplicado/solapamiento en misma comisión (mismo docente y misma comision)
         qs_misma_comision = models.Designacion.objects.filter(
@@ -239,6 +280,29 @@ class DesignacionViewSet(viewsets.ModelViewSet):
         data = request.data.copy()
         serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
+
+        # comprobar permiso de coordinador
+        if user.roles.filter(nombre__iexact="Coordinador").exists():
+            # obtener el objeto Coordinador asociado al usuario.
+            coord = self._coordinador_de_usuario(user)
+            if coord is None:
+                return Response({"detail": "Perfil de Coordinador no encontrado."}, status=status.HTTP_403_FORBIDDEN)
+
+            # si el usuario es Coordinador también
+            # se verificar que la comisión objetivo esté dentro de sus carreras.
+            comision_obj = serializer.validated_data.get(
+                "comision", instance.comision)
+
+            # busca si existe al menos un PlanDeEstudio VIGENTE
+            # para la asignatura de la comisión cuyo campo 'carrera' esté en las carreras coordinadas.
+            pertenece = comision_obj.asignatura.planes_de_estudio.filter(
+                carrera__in=coord.carreras_coordinadas.all(),
+                esta_vigente=True
+            ).exists()
+
+            if not pertenece:
+                return Response({"detail": "No tiene permisos para editar esa designación."},
+                                status=status.HTTP_403_FORBIDDEN)
 
         validated = serializer.validated_data.copy()
 
@@ -384,6 +448,13 @@ class DesignacionViewSet(viewsets.ModelViewSet):
         if not instance.activo:
             return Response({"detail": "La designación ya está inactiva."},
                             status=status.HTTP_400_BAD_REQUEST)
+
+        if user.roles.filter(nombre__iexact="Coordinador").exists():
+            coord = self._coordinador_de_usuario(user)
+            if coord and not instance.comision.asignatura.planes_de_estudio.filter(
+                    carrera__in=coord.carreras_coordinadas.all(), esta_vigente=True).exists():
+                return Response({"detail": "No tiene permisos para finalizar esta designación."},
+                                status=status.HTTP_403_FORBIDDEN)
 
         # verificar que al cerrar esta designación la asignatura mantenga al menos un cargo primario
         if not self._asignatura_tiene_cargo_primary_si_excluyo(instance.comision, excluir_designacion_pk=instance.pk):

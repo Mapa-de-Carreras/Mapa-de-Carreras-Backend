@@ -5,6 +5,7 @@ from gestion_academica import models
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
 
+
 def listar_planes():
     return models.PlanDeEstudio.objects.select_related("carrera", "documento").prefetch_related("asignaturas")
 
@@ -13,6 +14,20 @@ def obtener_plan(pk):
         return models.PlanDeEstudio.objects.get(pk=pk)
     except models.PlanDeEstudio.DoesNotExist:
         raise NotFound("Plan de estudios no encontrado.")
+    
+    
+def validar_asignatura_en_plan(plan, asignatura):
+    """
+    Devuelve el PlanAsignatura si la asignatura pertenece al plan.
+    """
+    try:
+        return models.PlanAsignatura.objects.get(
+            plan_de_estudio=plan,
+            asignatura=asignatura
+        )
+    except models.PlanAsignatura.DoesNotExist:
+        raise NotFound("La asignatura no pertenece a este plan de estudio.")
+               
 
 
 def _desactivar_planes_anteriores(carrera_id, excluir_plan_id=None):

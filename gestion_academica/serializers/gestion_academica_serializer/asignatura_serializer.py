@@ -3,27 +3,6 @@ from rest_framework import serializers
 from gestion_academica.models import Instituto,Asignatura,PlanAsignatura,Correlativa
 
 
-class InstitutoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Instituto
-        fields = ['id', 'codigo', 'nombre', 'activo', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'created_at', 'updated_at','activo']
-        
-    def validate(self, data):
-        if 'activo' not in data:
-            data['activo'] = True
-        return data
-
-    def validate_codigo(self, value):
-        if Instituto.objects.filter(codigo=value).exclude(id=self.instance.id if self.instance else None).exists():
-            raise serializers.ValidationError("Ya existe un instituto con este código.")
-        return value
-
-    def validate_nombre(self, value):
-        if not value.strip():
-            raise serializers.ValidationError("El nombre del instituto no puede estar vacío.")
-        return value
-
 class AsignaturaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asignatura
@@ -62,6 +41,47 @@ class AsignaturaSerializer(serializers.ModelSerializer):
             validated_data.get("horas_practica", instance.horas_practica)
         )
         return super().update(instance, validated_data)
+    
+    
+    
+class AsignaturaConCorrelativasSerializer(serializers.ModelSerializer):
+    correlativas = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Asignatura
+        fields = [
+            "id", "codigo", "nombre", "activo", "cuatrimestre",
+            "tipo_asignatura", "tipo_duracion",
+            "horas_teoria", "horas_practica",
+            "horas_semanales", "horas_totales",
+            "created_at", "updated_at",
+            "correlativas"
+        ]
+
+    def get_correlativas(self, asignatura):
+        """Busca correlativas usando PlanAsignatura → Correlativa."""
+        plan = self.context.get("plan")  # lo pasamos desde el serializer padre
+        if not plan:
+            return []
+
+        # buscamos el PlanAsignatura correspondiente
+        try:
+            pa = PlanAsignatura.objects.get(
+                plan_de_estudio=plan, asignatura=asignatura
+            )
+        except PlanAsignatura.DoesNotExist:
+            return []
+
+        # obtenemos correlativas reales (asignaturas)
+        correlativas = pa.correlativas_requeridas.select_related(
+            "correlativa_requerida__asignatura"
+        )
+
+        return [
+            AsignaturaSerializer(c.correlativa_requerida.asignatura).data
+            for c in correlativas
+        ]
+
 
 
 class CorrelativaSerializer(serializers.ModelSerializer):
@@ -75,3 +95,10 @@ class CorrelativaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Correlativa
         fields = ["id", "plan_asignatura", "correlativa_requerida"]
+        
+
+        
+        
+        
+        
+

@@ -80,8 +80,8 @@ class DesignacionViewSet(viewsets.ModelViewSet):
 
     def _coordinador_de_usuario(self, user):
         """
-        Si el user es Coordinador devuelve la instancia Coordinador (subclase de Usuario)
-        o None si no se encuentra.
+        Devuelve la instancia Coordinador asociada al `user`, o None si no existe.
+        Encapsula la consulta para usarla desde otras funciones.
         """
         try:
             return models.Coordinador.objects.filter(usuario=user).first()
@@ -135,6 +135,7 @@ class DesignacionViewSet(viewsets.ModelViewSet):
 
         # si es coordinador, limitar por sus carreras
         if user.roles.filter(nombre__iexact="Coordinador").exists():
+            # obtener el objeto Coordinador asociado al usuario.
             coord = self._coordinador_de_usuario(user)
             if coord:
                 carreras_qs = coord.carreras_coordinadas.all()
@@ -264,6 +265,13 @@ class DesignacionViewSet(viewsets.ModelViewSet):
         if not instance.activo:
             return Response({"detail": "La designación ya está inactiva."},
                             status=status.HTTP_400_BAD_REQUEST)
+
+        if user.roles.filter(nombre__iexact="Coordinador").exists():
+            coord = self._coordinador_de_usuario(user)
+            if coord and not instance.comision.asignatura.planes_de_estudio.filter(
+                    carrera__in=coord.carreras_coordinadas.all(), esta_vigente=True).exists():
+                return Response({"detail": "No tiene permisos para finalizar esta designación."},
+                                status=status.HTTP_403_FORBIDDEN)
 
         # verificar que al cerrar esta designación la asignatura mantenga al menos un cargo primario
         # if not self._asignatura_tiene_cargo_primary_si_excluyo(instance.comision, excluir_designacion_pk=instance.pk):

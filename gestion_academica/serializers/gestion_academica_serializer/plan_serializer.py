@@ -1,9 +1,7 @@
 
 from rest_framework import serializers
 from gestion_academica.models import PlanDeEstudio,PlanAsignatura,Carrera,Documento,Asignatura,Correlativa
-from .asignatura_serializer import AsignaturaSerializer
-
-
+from .asignatura_serializer import AsignaturaConCorrelativasSerializer
 
 class PlanAsignaturaSerializer(serializers.ModelSerializer):
     plan_id = serializers.PrimaryKeyRelatedField(
@@ -123,16 +121,36 @@ class PlanDeEstudioSerializerList(serializers.ModelSerializer):
 
 class PlanDeEstudioSerializerDetail(serializers.ModelSerializer):
     documento = serializers.StringRelatedField(read_only=True)
-    asignaturas = AsignaturaSerializer(read_only=True, many=True)
+    asignaturas = serializers.SerializerMethodField()
     creado_por = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = PlanDeEstudio
         fields = [
-            "id", "fecha_inicio", "esta_vigente","creado_por" ,"documento", "asignaturas",
-            "created_at", "updated_at"
+            "id",
+            "fecha_inicio",
+            "esta_vigente",
+            "creado_por",
+            "documento",
+            "asignaturas",
+            "created_at",
+            "updated_at",
         ]
-        
+
+    def get_asignaturas(self, obj):
+        asignaturas = (
+            obj.asignaturas.all()
+            .select_related()
+            .order_by("cuatrimestre", "codigo")
+        )
+
+        # pasamos el plan al serializer para obtener correlativas
+        return AsignaturaConCorrelativasSerializer(
+            asignaturas,
+            many=True,
+            context={"plan": obj}
+        ).data
+
     def get_creado_por(self, obj):
         if obj.creado_por:
             return {

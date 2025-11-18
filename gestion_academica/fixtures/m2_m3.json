@@ -17,7 +17,7 @@
             "updated_at": "2025-01-01T00:00:00Z"
         }
     },
-        {
+    {
         "model": "gestion_academica.caracter",
         "pk": 3,
         "fields": {
@@ -26,6 +26,7 @@
             "updated_at": "2025-01-01T00:00:00Z"
         }
     },
+
     {
         "model": "gestion_academica.modalidad",
         "pk": 1,
@@ -53,11 +54,12 @@
             "updated_at": "2025-01-01T00:00:00Z"
         }
     },
+
     {
         "model": "gestion_academica.dedicacion",
         "pk": 1,
         "fields": {
-            "nombre": "Simple",
+            "nombre": "SIMPLE",
             "created_at": "2025-01-01T00:00:00Z",
             "updated_at": "2025-01-01T00:00:00Z"
         }
@@ -66,7 +68,7 @@
         "model": "gestion_academica.dedicacion",
         "pk": 2,
         "fields": {
-            "nombre": "SemiExclusiva",
+            "nombre": "SEMIEXCLUSIVA",
             "created_at": "2025-01-01T00:00:00Z",
             "updated_at": "2025-01-01T00:00:00Z"
         }
@@ -75,11 +77,12 @@
         "model": "gestion_academica.dedicacion",
         "pk": 3,
         "fields": {
-            "nombre": "Exclusiva",
+            "nombre": "EXCLUSIVA",
             "created_at": "2025-01-01T00:00:00Z",
             "updated_at": "2025-01-01T00:00:00Z"
         }
     },
+
     {
         "model": "gestion_academica.docente",
         "pk": 1,
@@ -104,6 +107,7 @@
             "activo": true
         }
     },
+
     {
         "model": "gestion_academica.parametrosregimen",
         "pk": 1,
@@ -113,8 +117,8 @@
             "activo": true,
             "horas_max_frente_alumnos": 10,
             "horas_min_frente_alumnos": 4,
-            "horas_max_actual": 300,
-            "horas_min_actual": 100,
+            "horas_max_anual": 300,
+            "horas_min_anual": 100,
             "max_asignaturas": 2
         }
     },
@@ -127,11 +131,12 @@
             "activo": true,
             "horas_max_frente_alumnos": 14,
             "horas_min_frente_alumnos": 6,
-            "horas_max_actual": 350,
-            "horas_min_actual": 120,
+            "horas_max_anual": 350,
+            "horas_min_anual": 120,
             "max_asignaturas": 3
         }
     },
+
     {
         "model": "gestion_academica.cargo",
         "pk": 1,
@@ -204,6 +209,7 @@
             "updated_at": "2025-01-01T00:00:00Z"
         }
     },
+
     {
         "model": "gestion_academica.comision",
         "pk": 1,
@@ -212,7 +218,7 @@
             "turno": "MATUTINO",
             "promocionable": true,
             "activo": true,
-            "asignatura": 1
+            "plan_asignatura": 1
         }
     },
     {
@@ -223,21 +229,21 @@
             "turno": "VESPERTINO",
             "promocionable": false,
             "activo": true,
-            "asignatura": 2
+            "plan_asignatura": 2
         }
     },
+
     {
         "model": "gestion_academica.designacion",
         "pk": 1,
         "fields": {
             "fecha_inicio": "2025-03-01T00:00:00Z",
             "fecha_fin": null,
+            "activo": true,
             "tipo_designacion": "TEORICO",
             "docente": 1,
             "comision": 1,
             "dedicacion": 1,
-            "modalidad": 1,
-            "regimen": 1,
             "cargo": 1,
             "observacion": "Designación activa",
             "documento": null,
@@ -252,12 +258,11 @@
         "fields": {
             "fecha_inicio": "2025-03-01T00:00:00Z",
             "fecha_fin": null,
+            "activo": true,
             "tipo_designacion": "PRACTICO",
             "docente": 2,
             "comision": 2,
             "dedicacion": 2,
-            "modalidad": 3,
-            "regimen": 2,
             "cargo": 3,
             "observacion": "Activa - modalidad mixta",
             "documento": null,

@@ -31,13 +31,15 @@ class DocentesPorDedicacionAPIView(APIView):
 
         qs = Designacion.objects.filter(
             fecha_fin__isnull=True,
-            comision__asignatura__planes_de_estudio__carrera_id__in=carreras_ids,
+            comision__plan_asignatura__plan_de_estudio__carrera_id__in=carreras_ids,
             docente__dedicacion__isnull=False,
         ).select_related("docente__dedicacion")
 
         if not qs.exists():
             return Response(
-                {"detail": "No hay docentes registrados con designaciones activas en esta carrera."},
+                {
+                    "detail": "No hay docentes registrados con designaciones activas en esta carrera."
+                },
                 status=404,
             )
 
@@ -80,13 +82,15 @@ class DocentesPorModalidadAPIView(APIView):
 
         qs = Designacion.objects.filter(
             fecha_fin__isnull=True,
-            comision__asignatura__planes_de_estudio__carrera_id__in=carreras_ids,
+            comision__plan_asignatura__plan_de_estudio__carrera_id__in=carreras_ids,
             docente__modalidad__isnull=False,
         ).select_related("docente__modalidad")
 
         if not qs.exists():
             return Response(
-                {"detail": "No hay docentes registrados con designaciones activas en esta carrera."},
+                {
+                    "detail": "No hay docentes registrados con designaciones activas en esta carrera."
+                },
                 status=404,
             )
 
@@ -135,7 +139,7 @@ class HorasPorDocenteAPIView(APIView):
         docentes = (
             Docente.objects.filter(
                 designaciones__fecha_fin__isnull=True,
-                designaciones__comision__asignatura__planes_de_estudio__carrera_id__in=carreras_ids,
+                designaciones__comision__plan_asignatura__plan_de_estudio__carrera_id__in=carreras_ids,
             )
             .select_related("usuario", "modalidad", "dedicacion")
             .distinct()
@@ -174,7 +178,9 @@ class HorasPorDocenteAPIView(APIView):
                     "dedicacion": doc.dedicacion.nombre if doc.dedicacion else None,
                     "modalidad": doc.modalidad.nombre if doc.modalidad else None,
                     "total_horas_frente_alumnos": horas_frente,
-                    "asignaturas": doc.designaciones.filter(fecha_fin__isnull=True).count(),
+                    "asignaturas": doc.designaciones.filter(
+                        fecha_fin__isnull=True
+                    ).count(),
                     "estado_carga": estado,
                 }
             )
@@ -184,10 +190,13 @@ class HorasPorDocenteAPIView(APIView):
                 horas_min = int(horas_min) if horas_min else None
                 horas_max = int(horas_max) if horas_max else None
             except ValueError:
-                return Response({"detail": "Los filtros deben ser numéricos."}, status=400)
+                return Response(
+                    {"detail": "Los filtros deben ser numéricos."}, status=400
+                )
 
             resultados = [
-                r for r in resultados
+                r
+                for r in resultados
                 if (horas_min is None or r["total_horas_frente_alumnos"] >= horas_min)
                 and (horas_max is None or r["total_horas_frente_alumnos"] <= horas_max)
             ]
@@ -221,25 +230,29 @@ class DesignacionesPorCarreraAPIView(APIView):
         estado_comision = request.query_params.get("estado")
 
         qs = Designacion.objects.filter(
-            comision__asignatura__planes_de_estudio__carrera_id__in=carreras_ids
+            comision__plan_asignatura__plan_de_estudio__carrera_id__in=carreras_ids
         ).select_related(
             "docente__usuario",
+            "docente__modalidad",
             "dedicacion",
-            "modalidad",
-            "comision__asignatura",
+            "comision__plan_asignatura__asignatura",
         )
 
         if asignatura_id:
-            qs = qs.filter(comision__asignatura_id=asignatura_id)
+            qs = qs.filter(comision__plan_asignatura__asignatura_id=asignatura_id)
 
         if tipo_duracion:
-            qs = qs.filter(comision__asignatura__tipo_duracion=tipo_duracion)
+            qs = qs.filter(
+                comision__plan_asignatura__asignatura__tipo_duracion=tipo_duracion
+            )
 
         if anio:
             try:
                 qs = qs.filter(fecha_inicio__year=int(anio))
             except ValueError:
-                return Response({"detail": "El parámetro 'anio' debe ser numérico."}, status=400)
+                return Response(
+                    {"detail": "El parámetro 'anio' debe ser numérico."}, status=400
+                )
 
         if estado_comision:
             if estado_comision.upper() == "ACTIVA":
@@ -249,19 +262,26 @@ class DesignacionesPorCarreraAPIView(APIView):
 
         if not qs.exists():
             return Response(
-                {"detail": "No se encontraron designaciones registradas para esta carrera."},
+                {
+                    "detail": "No se encontraron designaciones registradas para esta carrera."
+                },
                 status=404,
             )
 
         data = []
         for d in qs.order_by("-fecha_inicio"):
+            plan_asig = d.comision.plan_asignatura
+            asignatura = plan_asig.asignatura
+
             data.append(
                 {
-                    "asignatura": d.comision.asignatura.nombre,
+                    "asignatura": asignatura.nombre,
                     "docente": str(d.docente),
                     "dedicacion": d.dedicacion.nombre if d.dedicacion else None,
-                    "modalidad": d.modalidad.nombre if d.modalidad else None,
-                    "periodo": d.comision.asignatura.tipo_duracion,  # ✔ CORREGIDO
+                    "modalidad": d.docente.modalidad.nombre
+                    if d.docente.modalidad
+                    else None,
+                    "periodo": asignatura.tipo_duracion,  # ANUAL / CUATRIMESTRAL
                     "anio": d.fecha_inicio.year,
                     "estado_comision": "ACTIVA" if d.comision.activo else "INACTIVA",
                 }
@@ -288,7 +308,7 @@ class HistorialDocenteAPIView(APIView):
 
         tiene_relacion = Designacion.objects.filter(
             docente=docente,
-            comision__asignatura__planes_de_estudio__carrera_id__in=carreras_ids,
+            comision__plan_asignatura__plan_de_estudio__carrera_id__in=carreras_ids,
         ).exists()
 
         if not tiene_relacion:
@@ -297,11 +317,21 @@ class HistorialDocenteAPIView(APIView):
             )
 
         if ver_todas:
-            qs = Designacion.objects.filter(docente=docente)
+            qs = Designacion.objects.filter(docente=docente).select_related(
+                "dedicacion",
+                "docente__modalidad",
+                "comision__plan_asignatura__asignatura",
+                "comision__plan_asignatura__plan_de_estudio__carrera",
+            )
         else:
             qs = Designacion.objects.filter(
                 docente=docente,
-                comision__asignatura__planes_de_estudio__carrera_id__in=carreras_ids,
+                comision__plan_asignatura__plan_de_estudio__carrera_id__in=carreras_ids,
+            ).select_related(
+                "dedicacion",
+                "docente__modalidad",
+                "comision__plan_asignatura__asignatura",
+                "comision__plan_asignatura__plan_de_estudio__carrera",
             )
 
         if not qs.exists():
@@ -312,20 +342,20 @@ class HistorialDocenteAPIView(APIView):
 
         data = []
         for d in qs.order_by("fecha_inicio"):
-            carrera = (
-                d.comision.asignatura.planes_de_estudio.first().carrera
-                if d.comision.asignatura.planes_de_estudio.exists()
-                else None
-            )
+            plan_asig = d.comision.plan_asignatura
+            asignatura = plan_asig.asignatura
+            carrera = plan_asig.plan_de_estudio.carrera
 
             data.append(
                 {
                     "carrera": carrera.nombre if carrera else None,
-                    "asignatura": d.comision.asignatura.nombre,
-                    "periodo": d.comision.asignatura.tipo_duracion,  # ✔ CORREGIDO
+                    "asignatura": asignatura.nombre,
+                    "periodo": asignatura.tipo_duracion,
                     "anio": d.fecha_inicio.year,
                     "dedicacion": d.dedicacion.nombre if d.dedicacion else None,
-                    "modalidad": d.modalidad.nombre if d.modalidad else None,
+                    "modalidad": d.docente.modalidad.nombre
+                    if d.docente.modalidad
+                    else None,
                     "estado_comision": "ACTIVA" if d.comision.activo else "INACTIVA",
                     "fecha_inicio": d.fecha_inicio,
                     "fecha_fin": d.fecha_fin,

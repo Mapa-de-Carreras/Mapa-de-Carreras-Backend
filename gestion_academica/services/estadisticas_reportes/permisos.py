@@ -16,7 +16,7 @@ def obtener_carreras_para_estadisticas(user, carrera_id_param=None):
     if not user.is_authenticated:
         raise PermissionDenied("Debe iniciar sesión para acceder a las estadísticas.")
 
-    # No usamos is_superuser: Admin NO debe acceder según tu requerimiento.
+
     if not hasattr(user, "coordinador"):
         raise PermissionDenied("Solo los coordinadores de carrera pueden acceder a este módulo.")
 
@@ -30,7 +30,7 @@ def obtener_carreras_para_estadisticas(user, carrera_id_param=None):
 
     carreras_ids = [cc.carrera_id for cc in qs]
 
-    # Opción C: si viene carrera_id, se valida
+
     if carrera_id_param is not None:
         try:
             carrera_id = int(carrera_id_param)
@@ -38,7 +38,6 @@ def obtener_carreras_para_estadisticas(user, carrera_id_param=None):
             raise PermissionDenied("El identificador de carrera es inválido.")
 
         if carrera_id not in carreras_ids:
-            # Coincide con el flujo secundario del RF 5.2.4 (docente no perteneciente a la carrera)
             raise PermissionDenied(
                 "No tiene permisos para visualizar las estadísticas de esta carrera."
             )

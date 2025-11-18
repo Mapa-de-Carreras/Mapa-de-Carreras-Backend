@@ -1,4 +1,4 @@
-# gestion_academica/views/estadisticas_reportes_views/reportes_exportacion.py
+# gestion_academica/views/estadisticas_reportes_views/reportes.py
 
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
@@ -21,16 +21,12 @@ import csv
 from io import StringIO, BytesIO
 from openpyxl import Workbook
 
-# ---------------- PDF ----------------
-from reportlab.lib.pagesizes import A4
-from reportlab.lib import colors
+# PDF
 from reportlab.platypus import (
-    SimpleDocTemplate,
-    Table,
-    TableStyle,
-    Paragraph,
-    Spacer,
+    SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
 )
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 
 
@@ -91,7 +87,7 @@ class ExportarEstadisticasAPIView(APIView):
         else:  # DESIGNACIONES
             raw = DesignacionesPorCarreraAPIView().get(request).data
 
-            #PERIODO = tipo_duracion (ANUAL / CUATRIMESTRAL)
+            # Convertimos datos para exportación
             data = []
             for d in raw:
                 data.append(
@@ -100,20 +96,20 @@ class ExportarEstadisticasAPIView(APIView):
                         "docente": d["docente"],
                         "dedicacion": d["dedicacion"],
                         "modalidad": d["modalidad"],
-                        "periodo": d["periodo"],  # ya corregido
+                        "periodo": d["periodo"],  
                         "anio": d["anio"],
-                        "estado_comision": d["estado_comision"],
+                        "estado_designacion": d["estado_comision"],  # ahora será estado_designacion en API
                     }
                 )
 
             fieldnames = [
-                "Asignatura",
-                "Docente",
-                "Dedicacion",
-                "Modalidad",
-                "Periodo",
-                "Anio",
-                "Estado de comision",
+                "asignatura",
+                "docente",
+                "dedicacion",
+                "modalidad",
+                "periodo",
+                "anio",
+                "estado_designacion",
             ]
             nombre_archivo = "designaciones_carrera"
 
@@ -128,7 +124,7 @@ class ExportarEstadisticasAPIView(APIView):
                 writer.writerow({k: row.get(k, "") for k in fieldnames})
 
             resp = HttpResponse(buffer.getvalue(), content_type="text/csv")
-            resp["Content-Disposition"] = f'attachment; filename="{nombre_archivo}.csv"'
+            resp["Content-Disposition"] = f'attachment; filename=\"{nombre_archivo}.csv\"'
             return resp
 
         # ============================================================
@@ -149,21 +145,15 @@ class ExportarEstadisticasAPIView(APIView):
                 output.getvalue(),
                 content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             )
-            resp["Content-Disposition"] = f'attachment; filename="{nombre_archivo}.xlsx"'
+            resp["Content-Disposition"] = f'attachment; filename=\"{nombre_archivo}.xlsx\"'
             return resp
 
         # ============================================================
-# EXPORTAR PDF CON LOGO UNTDFF + LANDSCAPE + ANCHO AJUSTADO
-# ============================================================
+        # EXPORTAR PDF
+        # ============================================================
         if formato == "pdf":
             buffer = BytesIO()
 
-            from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
-            from reportlab.lib.pagesizes import landscape, A4
-            from reportlab.lib.styles import getSampleStyleSheet
-            from reportlab.lib import colors
-
-            # Documento horizontal (landscape)
             doc = SimpleDocTemplate(
                 buffer,
                 pagesize=landscape(A4),
@@ -176,75 +166,74 @@ class ExportarEstadisticasAPIView(APIView):
             styles = getSampleStyleSheet()
             story = []
 
-            # -----------------------------
-            # LOGO INSTITUCIONAL UNTDFF
-            # -----------------------------
+            # Logo UNTDF
             try:
                 logo_path = "gestion_academica/static/gestion_academica/logo_untdf.png"
-                logo = Image(logo_path, width=120, height=60)   # ajusta tamaño si querés
+                logo = Image(logo_path, width=120, height=60)
                 story.append(logo)
             except Exception:
-                pass  # si falla no rompe el PDF
+                pass
 
             story.append(Spacer(1, 12))
 
-            # -----------------------------
             # Título
-            # -----------------------------
             titulo = f"<b>Reporte: {nombre_archivo.replace('_', ' ').title()}</b>"
             story.append(Paragraph(titulo, styles["Title"]))
             story.append(Spacer(1, 20))
 
-            # -----------------------------
-            # TABLA
-            # -----------------------------
-            table_data = [fieldnames]
+            pretty_headers = {
+                "asignatura": "Asignatura",
+                "docente": "Docente",
+                "dedicacion": "Dedicación",
+                "modalidad": "Modalidad",
+                "periodo": "Período",
+                "anio": "Año",
+                "estado_designacion": "Estado de la designación",
+                "total_docentes": "Total Docentes",
+                "porcentaje": "Porcentaje",
+                "total_horas_frente_alumnos": "Horas Frente Alumnos",
+                "asignaturas": "Asignaturas",
+                "estado_carga": "Estado de Carga",
+            }
+
+            # Tabla
+            table_data = [
+                [pretty_headers.get(col, col) for col in fieldnames]
+            ]
+
             for row in data:
-                table_data.append([Paragraph(str(row.get(k, "")), styles["BodyText"]) for k in fieldnames])
+                table_data.append(
+                    [Paragraph(str(row.get(k, "")), styles["BodyText"]) for k in fieldnames]
+                )
 
-            # ANCHO TOTAL DISPONIBLE (landscape)
             max_width = landscape(A4)[0] - 80
-            col_count = len(fieldnames)
-            col_width = max_width / col_count
-
-            col_widths = [col_width] * col_count
+            col_width = max_width / len(fieldnames)
+            col_widths = [col_width] * len(fieldnames)
 
             table = Table(table_data, colWidths=col_widths, repeatRows=1)
 
-            # Estilos
             table.setStyle(TableStyle([
-                # Encabezado
                 ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#5A5A5A")),
                 ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
                 ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
                 ("FONTSIZE", (0, 0), (-1, 0), 9),
 
-                # Cuerpo
                 ("BACKGROUND", (0, 1), (-1, -1), colors.HexColor("#F1F1D4")),
                 ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
                 ("FONTSIZE", (0, 1), (-1, -1), 8),
 
-                # Bordes y alineación
                 ("GRID", (0, 0), (-1, -1), 0.25, colors.black),
                 ("ALIGN", (0, 0), (-1, -1), "CENTER"),
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-
-                # Padding
-                ("LEFTPADDING", (0, 0), (-1, -1), 4),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 4),
-                ("TOPPADDING", (0, 0), (-1, -1), 2),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
             ]))
 
             story.append(table)
 
-            # Render PDF
             doc.build(story)
 
             pdf_value = buffer.getvalue()
             buffer.close()
 
             response = HttpResponse(pdf_value, content_type="application/pdf")
-            response["Content-Disposition"] = f'attachment; filename="{nombre_archivo}.pdf"'
+            response["Content-Disposition"] = f'attachment; filename=\"{nombre_archivo}.pdf\"'
             return response
-

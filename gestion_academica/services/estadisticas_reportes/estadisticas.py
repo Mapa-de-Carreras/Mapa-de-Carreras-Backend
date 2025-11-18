@@ -217,10 +217,9 @@ def historial_docente_qs(
     incluir_todas_carreras: bool
 ):
     """
-    - Para coordinador: por defecto solo su carrera.
-      Si incluir_todas_carreras=True, se limita a lo que razonablemente pueda ver el coordinador
-      (en este caso, podrías dejar igual solo su carrera o ampliarlo).
-    - Para admin: puede ver todas las carreras.
+        - Para coordinador: por defecto solo su carrera.
+        Si incluir_todas_carreras=True, se limita a lo que razonablemente pueda ver el coordinador).
+        - Para admin: puede ver todas las carreras.
     """
     carrera = get_carrera_para_estadisticas(usuario, carrera_id_param)
 
@@ -239,7 +238,6 @@ def historial_docente_qs(
 
     if not es_admin(usuario):
         # coordinador: si no pide todas, filtramos por su carrera; 
-        # si pide todas, podrías decidir dejar igual.
         if carrera is not None and not incluir_todas_carreras:
             qs = qs.filter(
                 comision__asignatura__planes_de_estudio__carrera=carrera

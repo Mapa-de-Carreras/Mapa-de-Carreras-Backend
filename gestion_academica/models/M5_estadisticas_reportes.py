@@ -40,7 +40,6 @@ class ExportLog(models.Model):
     """
     Registra las acciones de exportación de datos estadísticos.
 
-    Cumple con la postcondición de RF [5.3.0]:
     "El sistema registra la acción de exportación (usuario, fecha, tipo de datos, formato)."
 
     Campos:

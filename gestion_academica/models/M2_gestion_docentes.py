@@ -14,7 +14,7 @@ from .M4_gestion_usuarios_autenticacion import Usuario
 
 class Caracter(models.Model):
     """Tabla catálogo para el carácter de la designación (ej: Regular, Interino)."""
-    nombre = models.CharField(max_length=30, unique=True)
+    nombre = models.CharField(max_length=20, unique=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -25,7 +25,7 @@ class Caracter(models.Model):
 
 class Modalidad(models.Model):
     """Tabla catálogo para las modalidades de los docentes (ej: Presencial)."""
-    nombre = models.CharField(max_length=30, unique=True)
+    nombre = models.CharField(max_length=20, unique=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -36,7 +36,12 @@ class Modalidad(models.Model):
 
 class Dedicacion(models.Model):
     """Tabla catálogo para las dedicaciones docentes (ej: Simple, Exclusiva)."""
-    nombre = models.CharField(max_length=50, unique=True)
+    NOMBRE_DEDICACION_CHOICES = [
+        ('SIMPLE', 'simple'),
+        ('SEMIEXCLUSIVA', 'semiexclusiva'),
+        ('EXCLUSIVA', 'exclusiva'),
+    ]
+    nombre = models.CharField(max_length=20, unique=True, choices=NOMBRE_DEDICACION_CHOICES)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -78,8 +83,8 @@ class ParametrosRegimen(models.Model):
 
     horas_max_frente_alumnos = models.PositiveIntegerField()
     horas_min_frente_alumnos = models.PositiveIntegerField()
-    horas_max_actual = models.PositiveIntegerField()
-    horas_min_actual = models.PositiveIntegerField()
+    horas_max_anual = models.PositiveIntegerField()
+    horas_min_anual = models.PositiveIntegerField()
     max_asignaturas = models.PositiveIntegerField()
 
     class Meta:

@@ -1,19 +1,20 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.permissions import AllowAny
+from gestion_academica.permissions import EsAdministrador
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-
-from gestion_academica.serializers import AsignaturaSerializer
+from gestion_academica.serializers import AsignaturaSerializer,AsignaturaConCorrelativasSerializer
 from gestion_academica.services import asignaturas as asignatura_service
+from gestion_academica.services import plan_de_estudio as planes_de_estudio_service
 
 class AsignaturaListCreateView(APIView):
     """Listar o crear Asignaturas"""
 
     def get_permissions(self):
         if self.request.method == "POST":
-            return [IsAdminUser()]
+            return [EsAdministrador()]
         return [AllowAny()]
 
     # --- Parámetro de filtro para Swagger ---
@@ -77,7 +78,7 @@ class AsignaturaDetailView(APIView):
 
     def get_permissions(self):
         if self.request.method in ["PUT", "DELETE"]:
-            return [IsAdminUser()]
+            return [EsAdministrador()]
         return [AllowAny()]
 
     @swagger_auto_schema(
@@ -128,3 +129,33 @@ class AsignaturaDetailView(APIView):
         return Response({
             "message": f"La asignatura '{asignatura.nombre}' fue desactivada correctamente."
         }, status=status.HTTP_200_OK)
+        
+        
+        
+class AsignaturaConCorrelativasView(APIView):
+
+    def get_permissions(self):
+        return [AllowAny()]
+
+    @swagger_auto_schema(
+        tags=["Gestión Académica - Asignaturas"],
+        operation_summary="Obtener asignatura + correlativas",
+        operation_description="Devuelve una asignatura con sus correlativas dentro de un plan.",
+        responses={200: AsignaturaConCorrelativasSerializer()}
+    )
+    def get(self, request, pk, plan_id):
+
+        # obtener plan y asignatura
+        plan = planes_de_estudio_service.obtener_plan(pk=plan_id)
+        asignatura = asignatura_service.obtener_asignatura(pk=pk)
+
+        # validar relación plan ↔ asignatura
+        planes_de_estudio_service.validar_asignatura_en_plan(plan, asignatura)
+
+        # serializar correctamente
+        serializer = AsignaturaConCorrelativasSerializer(
+            asignatura,
+            context={"plan": plan}
+        )
+
+        return Response(serializer.data, status=status.HTTP_200_OK)

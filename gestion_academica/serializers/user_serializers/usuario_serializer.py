@@ -215,7 +215,7 @@ class CarreraCoordinacionSerializer(serializers.ModelSerializer):
         write_only=True
     )
 
-    creado_por = UsuarioSerializer(read_only=True)
+    creado_por = serializers.StringRelatedField(read_only=True)
     creado_por_id = serializers.PrimaryKeyRelatedField(
         source="creado_por",
         queryset=models.Usuario.objects.all(),
@@ -230,11 +230,7 @@ class CarreraCoordinacionSerializer(serializers.ModelSerializer):
         ]
     
 class CoordinadorSerializer(serializers.ModelSerializer):
-    carreras_coordinadas = CarreraCoordinacionSerializer(
-        source="carreracoordinacion_set",
-        many=True,
-        read_only=True
-    )
+    carreras_coordinadas = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Coordinador
@@ -242,7 +238,22 @@ class CoordinadorSerializer(serializers.ModelSerializer):
             'id', 'carreras_coordinadas', 'usuario_id'
         ]
 
-from ..M2_gestion_docentes import DocenteSerializer
+    def get_carreras_coordinadas(self, instance):
+        """
+        'instance' es el objeto Coordinador.
+        Este método filtra y devuelve solo las asignaciones
+        de CarreraCoordinacion que están activas.
+        """
+        
+        # Filtramos el 'carreracoordinacion_set' por activo=True
+        asignaciones_activas = instance.carreracoordinacion_set.filter(
+            activo=True
+        )
+        
+        # Usamos el CarreraCoordinacionSerializer (que ya tenías)
+        # para serializar la lista filtrada
+        return CarreraCoordinacionSerializer(asignaciones_activas, many=True).data
+
 class AdminUsuarioDetalleSerializer(UsuarioSerializer):
     """
     Serializer de SÓLO LECTURA para que el Admin vea
@@ -263,6 +274,7 @@ class AdminUsuarioDetalleSerializer(UsuarioSerializer):
         ]
 
     def get_docente_data(self, obj):
+        from ..M2_gestion_docentes import DocenteSerializer
         """
         Si el usuario tiene un perfil de docente,
         lo serializa y lo devuelve.

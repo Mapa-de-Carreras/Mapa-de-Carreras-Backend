@@ -42,9 +42,19 @@ class ParametrosRegimenSerializer(serializers.ModelSerializer):
             "id", "modalidad", "dedicacion",
             "modalidad_id", "dedicacion_id",
             "horas_max_frente_alumnos", "horas_min_frente_alumnos",
-            "horas_max_actual", "horas_min_actual", "activo",
+            "horas_max_anual", "horas_min_anual", "activo",
             "max_asignaturas"
         ]
+
+
+class UsuarioLiteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Usuario
+        fields = [
+            "id", "username", "first_name", "last_name",
+            "email", "legajo", "celular"
+        ]
+        read_only_fields = fields
 
 
 class DocenteSerializer(serializers.ModelSerializer):
@@ -72,7 +82,16 @@ class DocenteSerializer(serializers.ModelSerializer):
         allow_null=True
     )
 
-    usuario_id = serializers.IntegerField(source="usuario.id", read_only=True)
+    # usuario_id = serializers.IntegerField(source="usuario.id", read_only=True)
+    usuario_id = serializers.PrimaryKeyRelatedField(
+        source="usuario",
+        queryset=models.Usuario.objects.all(),
+        write_only=True,
+        required=False,
+        allow_null=False
+    )
+
+    usuario = UsuarioLiteSerializer(read_only=True)
     activo = serializers.BooleanField()
 
     # representaciones en lectura (simple PKs)
@@ -80,19 +99,56 @@ class DocenteSerializer(serializers.ModelSerializer):
     caracter = CaracterSerializer(read_only=True)
     dedicacion = DedicacionSerializer(read_only=True)
 
+    carreras = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = models.Docente
         # hereda todos los campos de Usuario mas los suyos
         fields = [
-            "id", "usuario_id",
+            "id",
+            "usuario", "usuario_id",
             "modalidad", "modalidad_id",
             "caracter", "caracter_id",
             "dedicacion", "dedicacion_id",
-            "cantidad_materias", "activo"
+            "cantidad_materias", "activo",
+            "carreras"
         ]
 
         read_only_fields = ["modalidad",
-                            "caracter", "dedicacion", "usuario_id"]
+                            "caracter", "dedicacion", "usuario", "carreras"]
+
+    def get_carreras(self, obj):
+        """
+        Devuelve lista de carreras (id, nombre) relacionadas al docente
+        por las designaciones -> comision -> asignatura -> planes_de_estudio -> carrera.
+        """
+        from django.db.models import Q
+        from django.utils import timezone
+        hoy = timezone.now()
+        # obtenemos PlanDeEstudio relacionados con asignaturas que tienen comisiones con designaciones del docente
+        planes_qs = models.PlanDeEstudio.objects.filter(
+            # La ruta corregida:
+            Q(planasignatura__comisiones__designaciones__fecha_fin__isnull=True) |
+            Q(planasignatura__comisiones__designaciones__fecha_fin__gt=hoy),
+            planasignatura__comisiones__designaciones__docente=obj,
+            
+            # Solo de planes vigentes
+            esta_vigente=True,
+            
+            # Solo de designaciones activAS
+            planasignatura__comisiones__designaciones__activo=True,            
+            
+        ).distinct().select_related('carrera')
+
+        # convertir a lista de dicts con id/nombre de carrera (distinct)
+        carreras = []
+        seen = set()
+        for plan in planes_qs:
+            c = plan.carrera
+            if c and c.id not in seen:
+                seen.add(c.id)
+                carreras.append({"id": c.id, "nombre": c.nombre})
+        return carreras
 
     def update(self, instance, validated_data):
         '''Actualiza solo los campos permitidos'''
@@ -103,9 +159,12 @@ class DocenteSerializer(serializers.ModelSerializer):
 
 
 class DocenteDetalleSerializer(serializers.ModelSerializer):
-    modalidad = serializers.StringRelatedField()
-    dedicacion = serializers.StringRelatedField()
-    caracter = serializers.StringRelatedField()
+
+    usuario = UsuarioLiteSerializer(read_only=True)
+
+    modalidad = serializers.StringRelatedField(read_only=True)
+    dedicacion = serializers.StringRelatedField(read_only=True)
+    caracter = serializers.StringRelatedField(read_only=True)
 
     # Se traen las designaciones relacionadas
     designaciones = serializers.SerializerMethodField()
@@ -113,8 +172,7 @@ class DocenteDetalleSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Docente
         fields = [
-            "id", "legajo", "username", "first_name", "last_name", "email",
-            "celular", "modalidad", "dedicacion", "caracter", "cantidad_materias",
+            "id", "usuario", "modalidad", "dedicacion", "caracter", "cantidad_materias",
             "designaciones"
         ]
 

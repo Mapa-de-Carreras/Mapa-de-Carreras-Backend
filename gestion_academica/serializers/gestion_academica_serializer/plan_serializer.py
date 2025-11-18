@@ -1,9 +1,7 @@
 
 from rest_framework import serializers
 from gestion_academica.models import PlanDeEstudio,PlanAsignatura,Carrera,Documento,Asignatura,Correlativa
-from .asignatura_serializer import AsignaturaSerializer
-
-
+from .asignatura_serializer import AsignaturaConCorrelativasSerializer
 
 class PlanAsignaturaSerializer(serializers.ModelSerializer):
     plan_id = serializers.PrimaryKeyRelatedField(
@@ -15,8 +13,13 @@ class PlanAsignaturaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PlanAsignatura
-        fields = ["id", "plan_id", "asignatura_id", "anio", "created_at", "updated_at"]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        fields = [
+            "id", "plan_id", "asignatura_id", "anio",
+            "horas_teoria", "horas_practica",
+            "horas_semanales", "horas_totales",
+            "created_at", "updated_at"
+        ]
+        read_only_fields = ["id", "horas_totales", "created_at", "updated_at"]
 
     def validate(self, data):
         plan = data.get("plan_de_estudio")
@@ -26,6 +29,9 @@ class PlanAsignaturaSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "No se puede asociar una asignatura inactiva al plan de estudio."
             )
+        
+        if data.get("horas_teoria", 0) < 0 or data.get("horas_practica", 0) < 0:
+            raise serializers.ValidationError("Las horas de teoría o práctica no pueden ser negativas.")
 
         if PlanAsignatura.objects.filter(plan_de_estudio=plan, asignatura=asignatura).exists():
             raise serializers.ValidationError(
@@ -115,16 +121,36 @@ class PlanDeEstudioSerializerList(serializers.ModelSerializer):
 
 class PlanDeEstudioSerializerDetail(serializers.ModelSerializer):
     documento = serializers.StringRelatedField(read_only=True)
-    asignaturas = AsignaturaSerializer(read_only=True, many=True)
+    asignaturas = serializers.SerializerMethodField()
     creado_por = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = PlanDeEstudio
         fields = [
-            "id", "fecha_inicio", "esta_vigente","creado_por" ,"documento", "asignaturas",
-            "created_at", "updated_at"
+            "id",
+            "fecha_inicio",
+            "esta_vigente",
+            "creado_por",
+            "documento",
+            "asignaturas",
+            "created_at",
+            "updated_at",
         ]
-        
+
+    def get_asignaturas(self, obj):
+        asignaturas = (
+            obj.asignaturas.all()
+            .select_related()
+            .order_by("cuatrimestre", "codigo")
+        )
+
+        # pasamos el plan al serializer para obtener correlativas
+        return AsignaturaConCorrelativasSerializer(
+            asignaturas,
+            many=True,
+            context={"plan": obj}
+        ).data
+
     def get_creado_por(self, obj):
         if obj.creado_por:
             return {

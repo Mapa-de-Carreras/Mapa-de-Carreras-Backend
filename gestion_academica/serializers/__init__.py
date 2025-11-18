@@ -21,3 +21,5 @@ from .user_serializers.editar_usuario_serializer import EditarUsuarioSerializer
 from .user_serializers.editar_docente_serializer import EditarDocenteSerializer
 from .user_serializers.editar_coordinador_serializer import EditarCoordinadorSerializer
 from .user_serializers.usuario_serializer import UsuarioSerializer, AdminUsuarioDetalleSerializer, CoordinadorSerializer, CarreraCoordinacionSerializer
+
+from .estadisticas_serializers.estadisticas_serializers import *

@@ -54,7 +54,7 @@
         "model": "gestion_academica.usuario",
         "pk": 2,
         "fields": {
-        "password": "pbkdf2_sha256$600000$demo$84JZp3eC4ZC3cNRhTzLZL9+uZ6+V4iI/ZgFhQLxP45o=",
+        "password": "pbkdf2_sha256$1000000$4bpC6YqWXytPmeMZBhJt4z$/f7Qby29ww5dygX5eBOWYuKncRXO9s5/coMfUSTVJ9k=",
         "last_login": null,
         "is_superuser": false,
         "username": "coordinador-sistemas",

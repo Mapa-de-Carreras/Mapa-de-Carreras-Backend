@@ -80,6 +80,8 @@ class Designacion(models.Model):
 
     observacion = models.TextField(blank=True, null=True)
 
+
+
     documento = models.ForeignKey("gestion_academica.Documento", on_delete=models.SET_NULL,
                                   null=True, blank=True, related_name="designaciones")
 

@@ -13,6 +13,7 @@ from gestion_academica.models.M4_gestion_usuarios_autenticacion import Usuario
 #     AdminUsuarioDetalleSerializer
 # )
 from ...serializers.user_serializers.usuario_serializer import UsuarioSerializer, AdminUsuarioDetalleSerializer
+from ...serializers.user_serializers.leer_usuario_serializer import LeerUsuarioSerializer
 from ...serializers.user_serializers.editar_usuario_serializer import EditarUsuarioSerializer
 # Importaciones para realizar el filtrado de usuarios deshabilitados
 from rest_framework.filters import SearchFilter
@@ -55,11 +56,11 @@ class UsuarioViewSet(mixins.ListModelMixin,
                      viewsets.GenericViewSet):
     """ 
     ViewSet para la GESTIÓN DE USUARIOS (Datos base).
-    
+
     Permite:
     - Admin: Listar, Ver, Actualizar (todo), Borrar.
     - Usuarios: Ver y Actualizar (solo sus datos personales).
-    
+
     PARA GESTIONAR DATOS DE ROL (ej: modalidad de docente
     o carreras de coordinador) USE LOS ENDPOINTS:
     - /api/docentes/{pk}/
@@ -91,16 +92,19 @@ class UsuarioViewSet(mixins.ListModelMixin,
         """
         # 1. Comprobar quién está haciendo la solicitud
         es_admin = EsAdministrador().has_permission(self.request, self)
-        
+
         # 2. Comprobar la acción
         action = self.action
 
         # 3. Lógica de decisión
-        if action == 'retrieve':
+        if action in ['list', 'retrieve']:
             # Para GET (Detalle), usamos el serializer más rico que
             # muestra los perfiles anidados de Docente y Coordinador.
             # UsuarioViewSetPermission ya restringe *quién* se puede ver.
-            return AdminUsuarioDetalleSerializer
+            # return AdminUsuarioDetalleSerializer
+
+            # NUEVO: ahora usamos LeerUsuarioSerializer para evitar mostrar password/is_staff y para devoler roles como objetos
+            return LeerUsuarioSerializer
 
         if action in ['update', 'partial_update']:
             if es_admin:
@@ -110,7 +114,7 @@ class UsuarioViewSet(mixins.ListModelMixin,
             else:
                 # Un usuario normal solo puede editar sus datos personales
                 return EditarUsuarioSerializer
-        
+
         # Para 'list', 'create', o cualquier otra, usa el default
         return UsuarioSerializer
 

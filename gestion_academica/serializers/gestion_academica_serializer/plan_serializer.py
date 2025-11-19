@@ -13,8 +13,13 @@ class PlanAsignaturaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PlanAsignatura
-        fields = ["id", "plan_id", "asignatura_id", "anio", "created_at", "updated_at"]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        fields = [
+            "id", "plan_id", "asignatura_id", "anio",
+            "horas_teoria", "horas_practica",
+            "horas_semanales", "horas_totales",
+            "created_at", "updated_at"
+        ]
+        read_only_fields = ["id", "horas_totales", "created_at", "updated_at"]
 
     def validate(self, data):
         plan = data.get("plan_de_estudio")
@@ -24,6 +29,9 @@ class PlanAsignaturaSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "No se puede asociar una asignatura inactiva al plan de estudio."
             )
+        
+        if data.get("horas_teoria", 0) < 0 or data.get("horas_practica", 0) < 0:
+            raise serializers.ValidationError("Las horas de teoría o práctica no pueden ser negativas.")
 
         if PlanAsignatura.objects.filter(plan_de_estudio=plan, asignatura=asignatura).exists():
             raise serializers.ValidationError(
@@ -90,15 +98,23 @@ class CorrelativaCreateSerializer(serializers.ModelSerializer):
             )
 
         return data
+    
+class DocumentoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Documento
+        fields = [
+            "id", "tipo", "emisor", "numero",
+            "anio", "archivo", "created_at"
+        ]
 
 
 class PlanDeEstudioSerializerList(serializers.ModelSerializer):
-    creado_por = serializers.SerializerMethodField()        
-
+    creado_por = serializers.SerializerMethodField()    
+    documento = DocumentoSerializer(read_only=True)
     class Meta:
         model = PlanDeEstudio
         fields = [
-            "id", "fecha_inicio", "esta_vigente","creado_por","created_at", "updated_at"
+            "id", "fecha_inicio", "esta_vigente","creado_por","created_at", "updated_at","documento"
         ]
         
     def get_creado_por(self, obj):
@@ -112,7 +128,7 @@ class PlanDeEstudioSerializerList(serializers.ModelSerializer):
         return None
 
 class PlanDeEstudioSerializerDetail(serializers.ModelSerializer):
-    documento = serializers.StringRelatedField(read_only=True)
+    documento = DocumentoSerializer(read_only=True)
     asignaturas = serializers.SerializerMethodField()
     creado_por = serializers.SerializerMethodField()
 
@@ -127,6 +143,7 @@ class PlanDeEstudioSerializerDetail(serializers.ModelSerializer):
             "asignaturas",
             "created_at",
             "updated_at",
+            "documento",
         ]
 
     def get_asignaturas(self, obj):
@@ -192,10 +209,3 @@ class PlanDeEstudioVigenciaSerializer(serializers.ModelSerializer):
         fields = ["esta_vigente"]
         
 
-class DocumentoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Documento
-        fields = [
-            "id", "tipo", "emisor", "numero",
-            "anio", "archivo", "created_at"
-        ]

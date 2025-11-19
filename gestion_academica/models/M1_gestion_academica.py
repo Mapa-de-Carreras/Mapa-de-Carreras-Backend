@@ -71,22 +71,9 @@ class Asignatura(models.Model):
         max_length=20, choices=TIPO_ASIGNATURA_CHOICES)
     tipo_duracion = models.CharField(
         max_length=20, choices=TIPO_DURACION_CHOICES)
-    horas_teoria = models.PositiveIntegerField(default=0)
-    horas_practica = models.PositiveIntegerField(default=0)
-    horas_semanales = models.PositiveIntegerField(default=0)
-    horas_totales = models.PositiveIntegerField(default=0)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
-    def save(self, *args, **kwargs):
-        self.horas_totales = self.horas_teoria + self.horas_practica
-        super().save(*args, **kwargs)
-
-    def clean(self):
-        if self.horas_totales != self.horas_teoria + self.horas_practica:
-            raise ValidationError(
-                "horas_totales debe ser la suma de teoria + practica")
 
     def __str__(self):
         return self.nombre
@@ -96,7 +83,12 @@ class Documento(models.Model):
     """
     Representa un documento administrativo o normativo emitido por la institución.
     """
-    tipo = models.CharField(max_length=30, blank=True, null=True)
+    TIPO_CHOICES = [
+        ('RESOLUCION', 'resolucion'),
+        ('ORDENANZA', 'ordenanza'),
+    ]
+
+    tipo = models.CharField(max_length=30, blank=True, null=True, choices=TIPO_CHOICES)
     emisor = models.CharField(max_length=200, blank=True, null=True)
     numero = models.CharField(max_length=50, blank=True, null=True)
     anio = models.PositiveIntegerField(blank=True, null=True)
@@ -160,6 +152,11 @@ class PlanAsignatura(models.Model):
     asignatura = models.ForeignKey(Asignatura, on_delete=models.CASCADE)
     anio = models.PositiveIntegerField(null=False, default=1)
 
+    horas_teoria = models.PositiveIntegerField(default=0)
+    horas_practica = models.PositiveIntegerField(default=0)
+    horas_semanales = models.PositiveIntegerField(default=0)
+    horas_totales = models.PositiveIntegerField(default=0)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -171,6 +168,15 @@ class PlanAsignatura(models.Model):
         indexes = [
             models.Index(fields=["plan_de_estudio", "asignatura"]),
         ]
+
+    def save(self, *args, **kwargs):
+        self.horas_totales = self.horas_teoria + self.horas_practica
+        super().save(*args, **kwargs)
+
+    def clean(self):
+        if self.horas_totales != self.horas_teoria + self.horas_practica:
+            raise ValidationError(
+                "horas_totales debe ser la suma de teoria + practica")
 
     def __str__(self):
         return f"{self.plan_de_estudio} - {self.asignatura} (año {self.anio})"

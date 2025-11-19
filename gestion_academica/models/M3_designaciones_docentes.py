@@ -20,25 +20,25 @@ class Comision(models.Model):
 
     nombre = models.CharField(max_length=50)
     turno = models.CharField(
-        max_length=20, choices=TURNO_CHOICES, db_index=True)
+    max_length=20, choices=TURNO_CHOICES, db_index=True)
     promocionable = models.BooleanField(default=False)
     activo = models.BooleanField(default=True)
-    asignatura = models.ForeignKey(
-        "gestion_academica.Asignatura", on_delete=models.CASCADE, related_name="comisiones")
+    plan_asignatura = models.ForeignKey(
+        "gestion_academica.PlanAsignatura", on_delete=models.CASCADE, related_name="comisiones")
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["asignatura", "nombre"], name="uq_comision_asignatura_nombre")
+                fields=["plan_asignatura", "nombre"], name="uq_comision_asignatura_nombre")
         ]
 
     def __str__(self):
-        return f"{self.asignatura.nombre} - {self.nombre}"
+        return f"{self.plan_asignatura.asignatura.nombre} - {self.nombre}"
 
 
 class Cargo(models.Model):
     """Tabla catálogo para los cargos docentes (ej: Titular, Adjunto)."""
-    nombre = models.CharField(max_length=30, unique=True)
+    nombre = models.CharField(max_length=20, unique=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -69,17 +69,12 @@ class Designacion(models.Model):
     dedicacion = models.ForeignKey("gestion_academica.Dedicacion",
                                    on_delete=models.PROTECT, null=True, blank=True, related_name="designaciones")
 
-    modalidad = models.ForeignKey(
-        "gestion_academica.Modalidad", on_delete=models.PROTECT, null=True, blank=True, related_name="designaciones"
-    )
-
-    regimen = models.ForeignKey("gestion_academica.ParametrosRegimen",
-                                on_delete=models.PROTECT, null=True, blank=True, related_name="designaciones")
-
     cargo = models.ForeignKey(
         Cargo, on_delete=models.PROTECT, null=False, related_name="designaciones")
 
     observacion = models.TextField(blank=True, null=True)
+
+
 
     documento = models.ForeignKey("gestion_academica.Documento", on_delete=models.SET_NULL,
                                   null=True, blank=True, related_name="designaciones")

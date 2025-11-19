@@ -31,5 +31,8 @@ class Command(BaseCommand):
 
             call_command('loaddata', 'gestion_academica/fixtures/data_gestion_usuarios.json')
             self.stdout.write(self.style.SUCCESS("Datos iniciales de gestión de usuarios cargados ✅"))
+
+            call_command('loaddata', 'gestion_academica/fixtures/m2_m3.json')
+            self.stdout.write(self.style.SUCCESS("Datos iniciales de m2 y m3 cargados ✅"))
         except Exception as e:
             self.stderr.write(self.style.ERROR(f"Error al cargar fixtures: {e}"))

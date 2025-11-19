@@ -215,7 +215,7 @@ class CarreraCoordinacionSerializer(serializers.ModelSerializer):
         write_only=True
     )
 
-    creado_por = UsuarioSerializer(read_only=True)
+    creado_por = serializers.StringRelatedField(read_only=True)
     creado_por_id = serializers.PrimaryKeyRelatedField(
         source="creado_por",
         queryset=models.Usuario.objects.all(),
@@ -254,7 +254,6 @@ class CoordinadorSerializer(serializers.ModelSerializer):
         # para serializar la lista filtrada
         return CarreraCoordinacionSerializer(asignaciones_activas, many=True).data
 
-from ..M2_gestion_docentes import DocenteSerializer
 class AdminUsuarioDetalleSerializer(UsuarioSerializer):
     """
     Serializer de SÓLO LECTURA para que el Admin vea
@@ -275,6 +274,7 @@ class AdminUsuarioDetalleSerializer(UsuarioSerializer):
         ]
 
     def get_docente_data(self, obj):
+        from ..M2_gestion_docentes import DocenteSerializer
         """
         Si el usuario tiene un perfil de docente,
         lo serializa y lo devuelve.

@@ -9,13 +9,14 @@ from datetime import date, time, datetime, timezone
 from django.utils import timezone as dj_timezone
 
 from gestion_academica import models
+from gestion_academica.permissions.coordinador_permissions import EsCoordinadorDeCarrera
 from gestion_academica.serializers.M3_designaciones_docentes import DesignacionSerializer
 
 
 class DesignacionViewSet(viewsets.ModelViewSet):
     queryset = models.Designacion.objects.all().order_by("id")
     serializer_class = DesignacionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, EsCoordinadorDeCarrera]
 
     # cargos primarios que una asignatura debe tener, al menos una
     REQUIRED_PRIMARY = {"titular", "asociado", "adjunto"}
@@ -24,14 +25,6 @@ class DesignacionViewSet(viewsets.ModelViewSet):
                        "asistente de 2da",
                        "viajero",
                        "contratado"}
-
-    def _user_can_manage(self, user):
-        return user.is_superuser or user.roles.filter(nombre__in=["Admin", "Coordinador"]).exists()
-
-    def _ensure_manage_permission(self, user):
-        if not self._user_can_manage(user):
-            raise PermissionDenied(
-                "No tiene permisos para gestionar designaciones.")
 
     def _periodos_solapan(self, a_start, a_end, b_start, b_end):
         """
@@ -87,13 +80,43 @@ class DesignacionViewSet(viewsets.ModelViewSet):
 
     def _coordinador_de_usuario(self, user):
         """
-        Si el user es Coordinador devuelve la instancia Coordinador (subclase de Usuario)
-        o None si no se encuentra.
+        Devuelve la instancia Coordinador asociada al `user`, o None si no existe.
+        Encapsula la consulta para usarla desde otras funciones.
         """
         try:
             return models.Coordinador.objects.filter(usuario=user).first()
         except Exception:
             return None
+
+    def get_queryset(self):
+        """
+        Filtra el queryset base.
+        - Admin: Ve todas las designaciones.
+        - Coordinador: Ve SÓLO las designaciones de sus carreras activas.
+        """
+        user = self.request.user
+        qs = models.Designacion.objects.all().order_by("id")
+
+        if user.is_superuser or user.roles.filter(nombre__iexact="Admin").exists():
+            return qs
+
+        if user.roles.filter(nombre__iexact="Coordinador").exists():
+            coord_perfil = self._coordinador_de_usuario(user)
+            if coord_perfil:
+                carreras_activas_qs = coord_perfil.carreras_coordinadas.filter(
+                    carreracoordinacion__coordinador=coord_perfil,
+                    carreracoordinacion__activo=True
+                )
+                
+                # --- AQUÍ ESTABA EL ERROR ---
+                # La ruta de tu DesignacionViewSet (de la consulta anterior)
+                # era incorrecta. Debe seguir tus nuevos modelos:
+                # Designacion -> Comision -> PlanAsignatura -> PlanDeEstudio -> Carrera
+                return qs.filter(
+                    comision__plan_asignatura__plan_de_estudio__carrera__in=carreras_activas_qs
+                ).distinct()
+
+        return models.Designacion.objects.none()
 
     def list(self, request, *args, **kwargs):
         """
@@ -112,6 +135,7 @@ class DesignacionViewSet(viewsets.ModelViewSet):
 
         # si es coordinador, limitar por sus carreras
         if user.roles.filter(nombre__iexact="Coordinador").exists():
+            # obtener el objeto Coordinador asociado al usuario.
             coord = self._coordinador_de_usuario(user)
             if coord:
                 carreras_qs = coord.carreras_coordinadas.all()
@@ -130,224 +154,83 @@ class DesignacionViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         """
-        Crea una designacion
-        - evita solapamientos (misma comision / cargo del mimsmo docente)
-        - exige modalidad (si no se recibe, se obtiene del docente)
-        - busca el parametro regimen activo para (modalidad, dedicacion) si es que no se envia en la peticion
-        - devuelve warning si el docente supera el max_asignaturas
-        """
+        Crea una designacion.
+        Toda la lógica de validación (solapamientos) y negocio
+        (advertencia de carga horaria) está delegada al Serializer.
+        """        
+        # Pasamos el 'context' para que el serializer
+        # pueda acceder a 'request.user'
         user = request.user
-        self._ensure_manage_permission(user)
 
-        data = request.data.copy()
+        if not (user.is_superuser or user.roles.filter(nombre__iexact="Admin").exists()):
+            try:
+                comision_id = request.data.get("comision_id")
+                if not comision_id:
+                    raise PermissionDenied("Falta el ID de la comisión.")
+                
+                # Buscamos la comisión (asegurándonos de que exista)
+                comision = models.Comision.objects.select_related(
+                    'plan_asignatura__plan_de_estudio__carrera'
+                ).get(pk=comision_id)
+                
+                carrera_de_la_comision = comision.plan_asignatura.plan_de_estudio.carrera
+                coord_perfil = self._coordinador_de_usuario(user)
+                
+                # Verificamos si el coordinador tiene esta carrera como activa
+                if not coord_perfil.carreras_coordinadas.filter(
+                        pk=carrera_de_la_comision.pk,
+                        carreracoordinacion__coordinador=coord_perfil,
+                        carreracoordinacion__activo=True
+                    ).exists():
+                    # Si no la tiene, denegamos el permiso
+                    raise PermissionDenied("No tiene permiso para crear designaciones en esta carrera.")
 
-        serializer = self.get_serializer(data=data)
+            except models.Comision.DoesNotExist:
+                return Response({"detail": f"La comisión (id={comision_id}) no existe."}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
+            
+        serializer = self.get_serializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
 
-        docente = serializer.validated_data.get("docente")
-        comision = serializer.validated_data.get("comision")
-        cargo = serializer.validated_data.get("cargo")
-        fecha_inicio = serializer.validated_data.get("fecha_inicio")
-        fecha_fin = serializer.validated_data.get("fecha_fin")
-
-        # evitar duplicado/solapamiento en misma comisión (mismo docente y misma comision)
-        qs_misma_comision = models.Designacion.objects.filter(
-            docente=docente, comision=comision
-        )
-        for d in qs_misma_comision:
-            if self._periodos_solapan(d.fecha_inicio, d.fecha_fin, fecha_inicio, fecha_fin):
-                return Response(
-                    {"detail": "Solapamiento detectado con otra designación en la misma comisión."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-        # evitar solape de mismo cargo para el mismo docente
-        qs_mismo_cargo = models.Designacion.objects.filter(
-            docente=docente, cargo=cargo
-        )
-        for d in qs_mismo_cargo:
-            if self._periodos_solapan(d.fecha_inicio, d.fecha_fin, fecha_inicio, fecha_fin):
-                return Response(
-                    {"detail": f"Solapamiento detectado para el cargo '{cargo.nombre}' del docente."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-        # dedicacion requerida
-        dedicacion_obj = serializer.validated_data.get('dedicacion')
-        modalidad_obj = serializer.validated_data.get(
-            "modalidad") or getattr(docente, "modalidad", None)
-
-        if dedicacion_obj is None:
-            return Response(
-                {"detail": "La dedicación es obligatoria para crear una designación."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        if modalidad_obj is None:
-            return Response(
-                {"detail": "No se pudo determinar la modalidad: el docente debe tener modalidad asignada."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # buscar ParametrosRegimen activo para (modalidad, dedicacion)
-        regimen_obj = serializer.validated_data.get("regimen")
-        if regimen_obj is None:
-            regimen_obj = self._buscar_regimen_activo(
-                modalidad_obj, dedicacion_obj)
-            if regimen_obj is None:
-                return Response(
-                    {"detail": "No existe un parámetro de régimen activo para la modalidad del docente y la dedicación indicada."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-        # advertencia por sobrecarga (no impide creación)
-        actuales = models.Designacion.objects.filter(
-            docente=docente, activo=True).count()
-        warning = None
-        if regimen_obj and actuales >= regimen_obj.max_asignaturas:
-            warning = f"Advertencia: el docente tiene {actuales} designaciones activas; máximo según régimen: {regimen_obj.max_asignaturas}."
-
         try:
-            with transaction.atomic():
-                # guardar con creado_por = request.user
-                instance = serializer.save(
-                    creado_por=user,
-                    regimen=regimen_obj,
-                    dedicacion=dedicacion_obj,
-                    modalidad=modalidad_obj,
-                    activo=True
-                )
+            # El .save() llama al 'create' del serializer
+            serializer.save()
         except IntegrityError as e:
             return Response({"detail": f"Error de base de datos: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            # Captura errores del .save() o ._verificar_...
             return Response({"detail": f"Error del servidor: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        out = self.get_serializer(instance).data
-        # se advierte ante la carga maxima del docente
-        if warning:
-            out["warning"] = warning
+        # El serializer.data contendrá la 'advertencia' si se generó
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        return Response(out, status=status.HTTP_201_CREATED)
-
+    # --- UPDATE ---
     def _handle_update(self, request, partial=False):
         """
-        Logica para actualizar una designacion
+        Logica para actualizar una designacion.
+        Toda la lógica de validación (solapamientos) y negocio
+        (advertencia de carga horaria) está delegada al Serializer.
         """
-        user = request.user
-        self._ensure_manage_permission(user)
-
         instance = self.get_object()
-        data = request.data.copy()
-        serializer = self.get_serializer(instance, data=data, partial=partial)
+        
+        serializer = self.get_serializer(instance, data=request.data, partial=partial, context={'request': request})
         serializer.is_valid(raise_exception=True)
 
-        validated = serializer.validated_data.copy()
-
-        if 'fecha_fin' in validated:
-            if validated.get('fecha_fin') is None:
-                # reabrir/designacion activa
-                validated['activo'] = True
-            else:
-                # cerrar/designacion inactiva
-                validated['activo'] = False
-
-        docente = serializer.validated_data.get("docente", instance.docente)
-        comision = serializer.validated_data.get("comision", instance.comision)
-        cargo = serializer.validated_data.get("cargo", instance.cargo)
-        fecha_inicio = serializer.validated_data.get(
-            "fecha_inicio", instance.fecha_inicio)
-        fecha_fin = serializer.validated_data.get(
-            "fecha_fin", instance.fecha_fin)
-
-        # si la actualización implica cerrar la designación (fecha_fin != None)
-        # debemos verificar que la asignatura mantenga al menos un cargo primario activo
-        if 'fecha_fin' in validated and validated.get('fecha_fin') is not None:
-            # comision ya fue resuelto arriba (puede ser new o el existing)
-            # Si la comprobación falla, devolvemos 400 y no guardamos.
-            if not self._asignatura_tiene_cargo_primary_si_excluyo(comision, excluir_designacion_pk=instance.pk):
-                return Response(
-                    {"detail": "No es posible finalizar esta designación: dejaría a la asignatura sin ningún docente con cargo Titular/Asociado/Adjunto (u otro cargo primario requerido)."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-        # evitar duplicado/solapamiento en misma comisión
-        qs_misma_comision = models.Designacion.objects.filter(
-            docente=docente, comision=comision).exclude(pk=instance.pk)
-        for d in qs_misma_comision:
-            if self._periodos_solapan(d.fecha_inicio, d.fecha_fin, fecha_inicio, fecha_fin):
-                return Response({"detail": "Solapamiento detectado con otra designación en la misma comisión."},
-                                status=status.HTTP_400_BAD_REQUEST)
-
-        # evitar solapamiento de cargo (excluyendo esta instancia)
-        qs_cargo = models.Designacion.objects.filter(
-            docente=docente, cargo=cargo).exclude(pk=instance.pk)
-        for d in qs_cargo:
-            if self._periodos_solapan(d.fecha_inicio, d.fecha_fin, fecha_inicio, fecha_fin):
-                return Response({"detail": f"Solapamiento detectado para el cargo '{cargo.nombre}'."},
-                                status=status.HTTP_400_BAD_REQUEST)
-
-        # si no se envia el regimen, se mantiene
-        dedicacion_obj = serializer.validated_data.get(
-            'dedicacion', getattr(instance, 'dedicacion', None))
-        modalidad_obj = serializer.validated_data.get('modalidad', getattr(
-            instance, 'modalidad', getattr(docente, "modalidad", None)))
-
-        if dedicacion_obj is None:
-            return Response(
-                {"detail": "La dedicación es obligatoria para actualizar una designación."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        if modalidad_obj is None:
-            return Response(
-                {"detail": "No se pudo determinar la modalidad: el docente debe tener modalidad asignada."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        regimen_obj = serializer.validated_data.get(
-            "regimen", getattr(instance, "regimen", None))
-
-        if regimen_obj is None:
-            regimen_obj = self._buscar_regimen_activo(
-                modalidad_obj, dedicacion_obj)
-            if regimen_obj is None:
-                return Response({"detail": "No existe un parámetro de régimen activo para la modalidad/dedicación indicada."},
-                                status=status.HTTP_400_BAD_REQUEST)
-
-        # advertencia por sobrecarga: contamos designaciones activas excluyendo esta instancia si estaba activa
-        actuales_qs = models.Designacion.objects.filter(
-            docente=docente, activo=True).exclude(pk=instance.pk)
-        actuales = actuales_qs.count()
-        warning = None
-        if regimen_obj and actuales >= regimen_obj.max_asignaturas:
-            warning = f"Advertencia: el docente tiene {actuales} designaciones activas; máximo según régimen: {regimen_obj.max_asignaturas}."
-
         try:
-            with transaction.atomic():
-                updated = serializer.save(
-                    regimen=regimen_obj,
-                    dedicacion=dedicacion_obj,
-                    modalidad=modalidad_obj,
-                    **({'activo': validated['activo']} if 'activo' in validated else {})
-                )
+            # El .save() llama al 'update' del serializer
+            serializer.save()
         except IntegrityError as e:
-            return Response({"detail": f"Error de base de datos: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": f"Error de base deatos: {str(e)}"}, status=status.HTTP_4D00_BAD_REQUEST)
         except Exception as e:
             return Response({"detail": f"Error inesperado: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        out = self.get_serializer(updated).data
-        if warning:
-            out["warning"] = warning
-        return Response(out, status=status.HTTP_200_OK)
+        
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def update(self, request, *args, **kwargs):
-        """
-        Permite actualizar una designacion
-        """
         return self._handle_update(request, partial=False)
 
     def partial_update(self, request, *args, **kwargs):
-        """
-        Permite actualizar parcialmente una designacion
-        """
         return self._handle_update(request, partial=True)
 
     def _asignatura_tiene_cargo_primary_si_excluyo(self, comision, excluir_designacion_pk=None):
@@ -356,9 +239,9 @@ class DesignacionViewSet(viewsets.ModelViewSet):
         una designación activa con cargo en PRIMARY_CARGOS si excluimos la designación
         con pk = excluir_designacion_pk (útil antes de cerrar/eliminar).
         """
-        asignatura = comision.asignatura
+        asignatura = comision.plan_asignatura.asignatura
         qs = models.Designacion.objects.filter(
-            comision__asignatura=asignatura,
+            comision__plan_asignatura__asignatura=asignatura,
             activo=True
         )
         if excluir_designacion_pk:
@@ -374,23 +257,28 @@ class DesignacionViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         """
         No hacemos hard delete para conservar historial.
-        Implementación: si fecha_fin es NULL -> la cerramos poniendo fecha_fin = today().
-        Si ya tiene fecha_fin -> devolvemos 400 indicando que ya está finalizada.
+        Implementación: Finaliza una designación activa (activo=True)
+        estableciendo su fecha_fin = hoy() y activo = False.
+        Si la designación ya está inactiva (activo=False), devuelve un error 400.
         """
-        user = request.user
-        self._ensure_manage_permission(user)
-
         instance = self.get_object()
         if not instance.activo:
             return Response({"detail": "La designación ya está inactiva."},
                             status=status.HTTP_400_BAD_REQUEST)
 
+        if user.roles.filter(nombre__iexact="Coordinador").exists():
+            coord = self._coordinador_de_usuario(user)
+            if coord and not instance.comision.asignatura.planes_de_estudio.filter(
+                    carrera__in=coord.carreras_coordinadas.all(), esta_vigente=True).exists():
+                return Response({"detail": "No tiene permisos para finalizar esta designación."},
+                                status=status.HTTP_403_FORBIDDEN)
+
         # verificar que al cerrar esta designación la asignatura mantenga al menos un cargo primario
-        if not self._asignatura_tiene_cargo_primary_si_excluyo(instance.comision, excluir_designacion_pk=instance.pk):
-            return Response(
-                {"detail": "No es posible finalizar esta designación: dejaría a la asignatura sin ningún docente con cargo Titular/Asociado/Adjunto."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        # if not self._asignatura_tiene_cargo_primary_si_excluyo(instance.comision, excluir_designacion_pk=instance.pk):
+        #     return Response(
+        #         {"detail": "No es posible finalizar esta designación: dejaría a la asignatura sin ningún docente con cargo Titular/Asociado/Adjunto."},
+        #         status=status.HTTP_400_BAD_REQUEST
+        #     )
 
         try:
             with transaction.atomic():

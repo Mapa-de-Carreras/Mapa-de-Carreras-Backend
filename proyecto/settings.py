@@ -25,12 +25,12 @@ load_dotenv()
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-%=-m*9o6tw587vhkkvs9rinwj8#vt=pkoojdd--ighmcyzm_l2'
+SECRET_KEY = os.environ.get("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG")
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS").split(',')
 
 
 # Application definition
@@ -195,7 +195,4 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASS')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # --- Configuración de CORS ---
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS").split(',')

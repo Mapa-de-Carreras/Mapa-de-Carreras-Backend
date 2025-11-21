@@ -2,7 +2,7 @@
 from rest_framework import serializers
 from gestion_academica.models import PlanDeEstudio,PlanAsignatura,Carrera,Documento,Asignatura,Correlativa
 from .asignatura_serializer import AsignaturaConCorrelativasSerializer
-
+from .documento_serializer import DocumentoSerializer
 class PlanAsignaturaSerializer(serializers.ModelSerializer):
     plan_id = serializers.PrimaryKeyRelatedField(
         source="plan_de_estudio", queryset=PlanDeEstudio.objects.all(), write_only=True
@@ -99,14 +99,6 @@ class CorrelativaCreateSerializer(serializers.ModelSerializer):
 
         return data
     
-class DocumentoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Documento
-        fields = [
-            "id", "tipo", "emisor", "numero",
-            "anio", "archivo", "created_at"
-        ]
-
 
 class PlanDeEstudioSerializerList(serializers.ModelSerializer):
     creado_por = serializers.SerializerMethodField()    

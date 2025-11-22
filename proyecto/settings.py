@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     'drf_yasg',                                 # Para Swagger
     'corsheaders',
     'django_filters',  # Para filtrar datos
-    'django_apscheduler', # Para automatizar tareas
+    'django_apscheduler',  # Para automatizar tareas
 ]
 
 MIDDLEWARE = [
@@ -195,4 +195,4 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASS')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # --- Configuración de CORS ---
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ALL_ORIGINS = True

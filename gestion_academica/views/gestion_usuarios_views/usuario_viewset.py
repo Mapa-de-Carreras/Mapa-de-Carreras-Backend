@@ -17,6 +17,7 @@ from ...serializers.user_serializers.leer_usuario_serializer import LeerUsuarioS
 from ...serializers.user_serializers.editar_usuario_serializer import EditarUsuarioSerializer
 # Importaciones para realizar el filtrado de usuarios deshabilitados
 from rest_framework.filters import SearchFilter
+from rest_framework.permissions import AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 from .filters import UsuarioFilter
 # Swagger
@@ -51,6 +52,7 @@ user_list_params = [
 
 class UsuarioViewSet(mixins.ListModelMixin,
                      mixins.RetrieveModelMixin,
+                     mixins.CreateModelMixin,
                      mixins.UpdateModelMixin,
                      mixins.DestroyModelMixin,
                      viewsets.GenericViewSet):
@@ -117,6 +119,12 @@ class UsuarioViewSet(mixins.ListModelMixin,
 
         # Para 'list', 'create', o cualquier otra, usa el default
         return UsuarioSerializer
+
+    # NUEVO
+    def get_permissions(self):
+        if self.action == "create":
+            return [AllowAny()]
+        return [UsuarioViewSetPermission()]
 
     def get_object(self):
         """

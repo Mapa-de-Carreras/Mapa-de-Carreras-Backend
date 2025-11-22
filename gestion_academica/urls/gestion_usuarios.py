@@ -2,7 +2,7 @@ from django.urls import path, include
 from gestion_academica.views import (
     UsuarioRegistroView,
     SolicitarCodigoView,
-    ActivarCuentaView,
+    #     ActivarCuentaView,
     RestablecerContraseñaView,
     RecuperarUsuarioView,
     LoginView,
@@ -21,9 +21,11 @@ router = DefaultRouter()
 router.register(r'usuarios', UsuarioViewSet, basename='usuario')
 router.register(r'roles', RolViewSet, basename='roles')
 router.register(r'coordinadores', CoordinadorViewSet, basename='coordinadores')
-router.register(r'carrera-coordinacion', CarreraCoordinacionViewSet, basename='carrera-coordinacion')
+router.register(r'carrera-coordinacion',
+                CarreraCoordinacionViewSet, basename='carrera-coordinacion')
 
 urlpatterns = [
+
     path('', include(router.urls)),
     # --- Endpoints de Autenticación (Login/Logout/Refresh) ---
     path('auth/login/', LoginView.as_view(), name='login'),
@@ -32,10 +34,11 @@ urlpatterns = [
          AllowAny]), name='token_refresh'),  # Usamos la de simplejwt
 
     # --- Endpoints de flujo de Registro ---
-    path('auth/registrar-usuario/',
-         UsuarioRegistroView.as_view(), name='registrar_usuario'),
-    path('auth/registrar/activar-cuenta/',
-         ActivarCuentaView.as_view(), name='activar_cuenta'),
+    # NUEVO: ahora, auth/registrar-usuario pasa a /api/usuarios (POST) y ActivarCuenta pasa a desuso
+    # path('auth/registrar-usuario/',
+    #          UsuarioRegistroView.as_view(), name='registrar_usuario'),
+    # path('auth/registrar/activar-cuenta/',
+    #          ActivarCuentaView.as_view(), name='activar_cuenta'),
 
     # --- Flujo de Recuperación de Cuenta ---
     path('auth/recuperar/solicitar-codigo/', SolicitarCodigoView.as_view(),

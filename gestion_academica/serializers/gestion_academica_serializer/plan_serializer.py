@@ -2,6 +2,7 @@
 from rest_framework import serializers
 from gestion_academica.models import PlanDeEstudio,PlanAsignatura,Carrera,Documento,Asignatura,Correlativa
 from .asignatura_serializer import AsignaturaConCorrelativasSerializer
+from .carrera_serializer import CarreraSerializerDetail
 from .documento_serializer import DocumentoSerializer
 class PlanAsignaturaSerializer(serializers.ModelSerializer):
     plan_id = serializers.PrimaryKeyRelatedField(
@@ -123,7 +124,7 @@ class PlanDeEstudioSerializerDetail(serializers.ModelSerializer):
     documento = DocumentoSerializer(read_only=True)
     asignaturas = serializers.SerializerMethodField()
     creado_por = serializers.SerializerMethodField()
-
+    carrera=CarreraSerializerDetail(read_only=True)
     class Meta:
         model = PlanDeEstudio
         fields = [
@@ -136,6 +137,7 @@ class PlanDeEstudioSerializerDetail(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "documento",
+            "carrera",
         ]
 
     def get_asignaturas(self, obj):

@@ -70,10 +70,12 @@ class CorrelativaCreateSerializer(serializers.ModelSerializer):
 class PlanDeEstudioSerializerList(serializers.ModelSerializer):
     creado_por = serializers.SerializerMethodField()    
     documento = DocumentoSerializer(read_only=True)
+    carrera_nombre=serializers.CharField(source="carrera.nombre",read_only=True)
+    carrera_id=serializers.IntegerField(source="carrera.id",read_only=True)
     class Meta:
         model = PlanDeEstudio
         fields = [
-            "id", "fecha_inicio", "esta_vigente","creado_por","created_at", "updated_at","documento"
+            "id", "fecha_inicio", "esta_vigente","creado_por","created_at", "updated_at","documento","carrera_nombre","carrera_id"
         ]
         
     def get_creado_por(self, obj):

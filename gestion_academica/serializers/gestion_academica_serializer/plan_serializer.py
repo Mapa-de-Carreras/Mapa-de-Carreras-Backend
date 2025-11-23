@@ -1,45 +1,11 @@
 
 from rest_framework import serializers
 from gestion_academica.models import PlanDeEstudio,PlanAsignatura,Carrera,Documento,Asignatura,Correlativa
-from .asignatura_serializer import AsignaturaConCorrelativasSerializer
+from .asignatura_serializer import AsignaturaConCorrelativasSerializer,AsignaturaSerializer
 from .carrera_serializer import CarreraSerializerDetail
 from .documento_serializer import DocumentoSerializer
-class PlanAsignaturaSerializer(serializers.ModelSerializer):
-    plan_id = serializers.PrimaryKeyRelatedField(
-        source="plan_de_estudio", queryset=PlanDeEstudio.objects.all(), write_only=True
-    )
-    asignatura_id = serializers.PrimaryKeyRelatedField(
-        source="asignatura", queryset=Asignatura.objects.all(), write_only=True
-    )
 
-    class Meta:
-        model = PlanAsignatura
-        fields = [
-            "id", "plan_id", "asignatura_id", "anio",
-            "horas_teoria", "horas_practica",
-            "horas_semanales", "horas_totales",
-            "created_at", "updated_at"
-        ]
-        read_only_fields = ["id", "horas_totales", "created_at", "updated_at"]
 
-    def validate(self, data):
-        plan = data.get("plan_de_estudio")
-        asignatura = data.get("asignatura")
-
-        if not asignatura.activo:
-            raise serializers.ValidationError(
-                "No se puede asociar una asignatura inactiva al plan de estudio."
-            )
-        
-        if data.get("horas_teoria", 0) < 0 or data.get("horas_practica", 0) < 0:
-            raise serializers.ValidationError("Las horas de teoría o práctica no pueden ser negativas.")
-
-        if PlanAsignatura.objects.filter(plan_de_estudio=plan, asignatura=asignatura).exists():
-            raise serializers.ValidationError(
-                "Esta asignatura ya está asociada a este plan de estudio."
-            )
-
-        return data
 
 class CorrelativaSerializer(serializers.ModelSerializer):
     asignatura_origen = serializers.CharField(source="plan_asignatura.asignatura.nombre", read_only=True)
@@ -104,10 +70,12 @@ class CorrelativaCreateSerializer(serializers.ModelSerializer):
 class PlanDeEstudioSerializerList(serializers.ModelSerializer):
     creado_por = serializers.SerializerMethodField()    
     documento = DocumentoSerializer(read_only=True)
+    carrera_nombre=serializers.CharField(source="carrera.nombre",read_only=True)
+    carrera_id=serializers.IntegerField(source="carrera.id",read_only=True)
     class Meta:
         model = PlanDeEstudio
         fields = [
-            "id", "fecha_inicio", "esta_vigente","creado_por","created_at", "updated_at","documento"
+            "id", "fecha_inicio", "esta_vigente","creado_por","created_at", "updated_at","documento","carrera_nombre","carrera_id"
         ]
         
     def get_creado_por(self, obj):
@@ -201,5 +169,76 @@ class PlanDeEstudioVigenciaSerializer(serializers.ModelSerializer):
     class Meta:
         model = PlanDeEstudio
         fields = ["esta_vigente"]
+        
+        
+
+class PlanAsignaturaSerializer(serializers.ModelSerializer):
+    plan_de_estudio_id = serializers.PrimaryKeyRelatedField(
+        source="plan_de_estudio",
+        queryset=PlanDeEstudio.objects.all()
+    )
+    asignatura_id = serializers.PrimaryKeyRelatedField(
+        source="asignatura",
+        queryset=Asignatura.objects.all()
+    )
+    descripcion = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PlanAsignatura
+        fields = [
+            "id",
+            "plan_de_estudio_id",
+            "asignatura_id",
+            "anio",
+            "horas_teoria",
+            "horas_practica",
+            "horas_semanales",
+            "horas_totales",
+            "created_at",
+            "updated_at",
+            "descripcion"
+        ]
+        read_only_fields = ["id", "horas_totales", "created_at", "updated_at"]
+
+    def get_descripcion(self, obj):
+        return str(obj)
+
+    def validate(self, data):
+        plan = data.get("plan_de_estudio")
+        asignatura = data.get("asignatura")
+
+        # Asignaturas inactivas no se pueden agregar
+        if not asignatura.activo:
+            raise serializers.ValidationError(
+                "No se puede asociar una asignatura inactiva al plan de estudio."
+            )
+
+        # Evitar la validación cuando estamos editando el mismo objeto
+        instancia = getattr(self, "instance", None)
+
+        if instancia:
+            # Si el plan o la asignatura cambian, recién ahí validar duplicado
+            plan_cambia = plan != instancia.plan_de_estudio
+            asignatura_cambia = asignatura != instancia.asignatura
+
+            if plan_cambia or asignatura_cambia:
+                if PlanAsignatura.objects.filter(
+                    plan_de_estudio=plan, asignatura=asignatura
+                ).exists():
+                    raise serializers.ValidationError(
+                        "Esta asignatura ya está asociada a este plan."
+                    )
+        else:
+            # Si es un create (POST), validar normal
+            if PlanAsignatura.objects.filter(
+                plan_de_estudio=plan, asignatura=asignatura
+            ).exists():
+                raise serializers.ValidationError(
+                    "Esta asignatura ya está asociada a este plan."
+                )
+
+        return data
+
+
         
 

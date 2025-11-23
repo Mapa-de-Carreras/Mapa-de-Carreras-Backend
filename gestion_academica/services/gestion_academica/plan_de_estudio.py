@@ -88,23 +88,6 @@ def cambiar_vigencia(pk, nueva_vigencia: bool):
     plan.save(update_fields=["esta_vigente", "updated_at"])
     return plan
 
-def asociar_asignatura_a_plan(validated_data):
-    """Asocia una asignatura a un plan de estudio."""
-    return models.PlanAsignatura.objects.create(**validated_data)
-
-def desasociar_asignatura_de_plan(plan_id, asignatura_id):
-    """Elimina la relación entre una asignatura y un plan de estudio."""
-    try:
-        plan_asignatura = models.PlanAsignatura.objects.get(
-            plan_de_estudio_id=plan_id,
-            asignatura_id=asignatura_id
-        )
-        plan_asignatura.delete()
-        return True
-    except ObjectDoesNotExist:
-        return False
-
-
 def eliminar_plan(pk):
     plan = obtener_plan(pk)
     if plan.asignaturas.exists():

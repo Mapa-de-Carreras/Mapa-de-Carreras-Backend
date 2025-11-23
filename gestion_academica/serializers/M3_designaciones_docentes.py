@@ -7,40 +7,41 @@ from rest_framework import serializers
 from gestion_academica import models
 from gestion_academica.serializers.M2_gestion_docentes import DocenteSerializer
 from django.db.models import Q
+from gestion_academica.serializers import PlanAsignaturaSerializer
 
 User = get_user_model()
 
 
 class ComisionSerializer(serializers.ModelSerializer):
-    asignatura_nombre = serializers.CharField(
-        source="plan_asignatura_asignatura.nombre", read_only=True)
+    plan_asignatura_id = serializers.IntegerField(source="plan_asignatura.id", read_only=True)
+    plan_asignatura_str = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Comision
         fields = [
             "id", "nombre", "turno", "promocionable", "activo",
-            "plan_asignatura", "asignatura_nombre"
+            "plan_asignatura_id",
+            "plan_asignatura_str",
         ]
-        read_only_fields = ["id", "asignatura_nombre"]
+        read_only_fields = ["id"]
+
+    def get_plan_asignatura_str(self, obj):
+        if obj.plan_asignatura:
+            return str(obj.plan_asignatura)
+        return None
 
 
 class ComisionCreateUpdateSerializer(serializers.ModelSerializer):
-    asignatura_id = serializers.PrimaryKeyRelatedField(
-        source="asignatura", queryset=models.Asignatura.objects.all(), write_only=True
-    )
-
+    
     class Meta:
         model = models.Comision
         fields = ["nombre", "turno", "promocionable",
-                  "activo", "asignatura_id"]
+                  "activo", "plan_asignatura"]
 
     def validate(self, data):
-        asignatura = data.get("asignatura") or getattr(
-            self.instance, "asignatura", None)
         nombre = data.get("nombre") or getattr(self.instance, "nombre", None)
 
-        if models.Comision.objects.filter(
-            asignatura=asignatura, nombre__iexact=nombre
+        if models.Comision.objects.filter(nombre__iexact=nombre
         ).exclude(id=self.instance.id if self.instance else None).exists():
             raise serializers.ValidationError(
                 f"Ya existe una comisión llamada '{nombre}' para esta asignatura."

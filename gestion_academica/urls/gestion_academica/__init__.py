@@ -4,5 +4,6 @@ urlpatterns = [
     path('institutos/', include('gestion_academica.urls.gestion_academica.institutos')),
     path('carreras/', include('gestion_academica.urls.gestion_academica.carreras')),
     path('asignaturas/', include('gestion_academica.urls.gestion_academica.asignaturas')),
-    path('planes/', include('gestion_academica.urls.gestion_academica.planes'))
+    path('planes/', include('gestion_academica.urls.gestion_academica.planes')),
+    path('documentos/', include('gestion_academica.urls.gestion_academica.documentos')),
 ]

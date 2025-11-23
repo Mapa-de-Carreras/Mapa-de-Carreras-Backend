@@ -185,6 +185,11 @@ SWAGGER_SETTINGS = {
     }
 }
 
+#configuracion de file system
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+
 # Configuración para verificación de usuario por Email
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'

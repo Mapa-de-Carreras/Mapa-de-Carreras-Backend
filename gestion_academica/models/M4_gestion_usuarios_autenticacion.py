@@ -12,7 +12,8 @@ from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from .M1_gestion_academica import Carrera
-
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 class Usuario(AbstractUser):
     """Modelo base para todos los usuarios del sistema."""
@@ -73,6 +74,16 @@ class RolUsuario(models.Model):
                 fields=["usuario", "rol"], name="uq_usuario_rol")
         ]
 
+@receiver(post_save, sender=Usuario)
+def asignar_rol_admin_a_superuser(sender, instance, created, **kwargs):
+    if created and instance.is_superuser:
+        admin_rol, _ = Rol.objects.get_or_create(
+            nombre="Administrador",
+            defaults={
+                "descripcion": "Acceso completo a todos los módulos y funcionalidades disponibles."
+            },
+        )
+        RolUsuario.objects.get_or_create(usuario=instance, rol=admin_rol)
 
 class Notificacion(models.Model):
     """Contenido de una notificación que puede enviarse a varios usuarios."""

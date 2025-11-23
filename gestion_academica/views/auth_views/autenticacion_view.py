@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from gestion_academica.serializers.M4_gestion_usuarios_autenticacion import LoginSerializer, LogoutSerializer
+from gestion_academica.serializers.user_serializers.leer_usuario_serializer import LeerUsuarioSerializer
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework.permissions import AllowAny
@@ -18,10 +19,23 @@ class LoginView(APIView):
         responses={200: openapi.Response("Login exitoso", schema=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
+                'id': openapi.Schema(type=openapi.TYPE_INTEGER),
                 'refresh': openapi.Schema(type=openapi.TYPE_STRING),
                 'access': openapi.Schema(type=openapi.TYPE_STRING),
-                'id': openapi.Schema(type=openapi.TYPE_INTEGER),
-                'is_staff': openapi.Schema(type=openapi.TYPE_BOOLEAN),
+
+                'username': openapi.Schema(type=openapi.TYPE_STRING),
+                'first_name': openapi.Schema(type=openapi.TYPE_STRING),
+                'last_name': openapi.Schema(type=openapi.TYPE_STRING),
+                'email': openapi.Schema(type=openapi.TYPE_STRING),
+                'is_active': openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                'legajo': openapi.Schema(type=openapi.TYPE_STRING),
+                'fecha_nacimiento': openapi.Schema(type=openapi.TYPE_STRING, nullable=True),
+                'celular': openapi.Schema(type=openapi.TYPE_STRING, nullable=True),
+                'roles': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Items(type=openapi.TYPE_STRING)),
+                'docente_data': openapi.Schema(type=openapi.TYPE_OBJECT, nullable=True),
+                'coordinador_data': openapi.Schema(type=openapi.TYPE_OBJECT, nullable=True),
+
+
             }
         ))}
     )
@@ -30,11 +44,15 @@ class LoginView(APIView):
         if serializer.is_valid():
             usuario = serializer.validated_data['user']
             refresh = RefreshToken.for_user(usuario)
+
+            user_serializer = LeerUsuarioSerializer(
+                usuario, context={'request': request})
+            user_data = user_serializer.data
+
             return Response({
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
-                'id': usuario.id,
-                'is_staff': usuario.is_staff,
+                'usuario': user_data
             }, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

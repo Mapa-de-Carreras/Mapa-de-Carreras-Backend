@@ -3,13 +3,16 @@ from rest_framework import serializers
 from gestion_academica import models
 from .base_usuario_serializer import BaseUsuarioSerializer
 from gestion_academica.serializers import CarreraSerializerDetail
+from gestion_academica.serializers.user_serializers.role_serializer import RoleSerializer
 from ..validators import validar_nueva_contraseña
+
 
 class CaseInsensitiveSlugRelatedField(serializers.SlugRelatedField):
     """
     Un SlugRelatedField que no distingue mayúsculas de minúsculas
     al buscar el 'slug' de rol en la base de datos.
     """
+
     def to_internal_value(self, data):
         # Sobrescribimos este método para usar una búsqueda
         # insensible a mayúsculas (__iexact)
@@ -26,25 +29,39 @@ class CaseInsensitiveSlugRelatedField(serializers.SlugRelatedField):
             # Mensaje de error si hay duplicados (ej: "rol" y "Rol")
             self.fail('multiple_objects')
 
+
 class UsuarioSerializer(BaseUsuarioSerializer):
     """
     Serializer para el ADMIN. Puede ver y editar todos los campos
     y también crear usuarios.
     """
-    roles = CaseInsensitiveSlugRelatedField(
-        slug_field='nombre',  # Busca el rol por su campo 'nombre'
-        queryset=models.Rol.objects.all(),
+
+    # roles = CaseInsensitiveSlugRelatedField(
+    #     slug_field='nombre',  # Busca el rol por su campo 'nombre'
+    #     queryset=models.Rol.objects.all(),
+    #     many=True,
+    #     required=False
+    # )
+
+    # NUEVO: ahora devolvemos los roles como objetos (id, nombre, descripcion)
+    roles = RoleSerializer(many=True, read_only=True)
+
+    roles_ids = serializers.PrimaryKeyRelatedField(
         many=True,
+        queryset=models.Rol.objects.all(),
+        source="roles",
+        write_only=True,
         required=False
     )
+
     password = serializers.CharField(
-        write_only=True, 
-        required=True, 
+        write_only=True,
+        required=True,
         style={'input_type': 'password'}
     )
     password2 = serializers.CharField(
-        write_only=True, 
-        required=True, 
+        write_only=True,
+        required=True,
         style={'input_type': 'password'}
     )
 
@@ -52,15 +69,23 @@ class UsuarioSerializer(BaseUsuarioSerializer):
         model = models.Usuario
         # El Admin puede ver y editar todo
         fields = [
-            'id', 'username', 'first_name', 'last_name', 'email', 'is_staff', 'is_active',
-            'password', 'password2', 'legajo', 'fecha_nacimiento', 
-            'celular', 'roles'
+            'id', 'username', 'first_name', 'last_name',
+            'email', 'is_staff', 'is_active',
+            'password', 'password2', 'legajo', 'fecha_nacimiento', 'celular',
+            'roles', 'roles_ids'
         ]
         extra_kwargs = {
             # Hacemos que la contraseña no sea requerida en PATCH
-            'password': {'required': False}, 
+            'password': {'required': False},
             'password2': {'required': False},
-            'fecha_nacimiento': {'required': True} # Sigue siendo req. para crear
+            # Sigue siendo req. para crear
+            'fecha_nacimiento': {'required': False},
+
+            # NUEVO: first_name, last_name, email, legajo son obligatorios
+            'first_name': {'required': True},
+            'last_name': {'required': True},
+            'email': {'required': True},
+            'legajo': {'required': True}
         }
 
     def validate(self, data):
@@ -70,10 +95,12 @@ class UsuarioSerializer(BaseUsuarioSerializer):
         # 1. Llama a la validación del padre (BaseUsuarioSerializer)
         data = super().validate(data)
 
-        is_create = (self.instance is None) # Self.instance=Usuario si no es CREATE
-        if is_create: # Se valida la contraseña solo si es CREATE
+        # Self.instance=Usuario si no es CREATE
+        is_create = (self.instance is None)
+        if is_create:  # Se valida la contraseña solo si es CREATE
             if 'password' not in data or 'password2' not in data:
-                 raise serializers.ValidationError({"password": "Password y password2 son requeridos para registrar."})
+                raise serializers.ValidationError(
+                    {"password": "Password y password2 son requeridos para registrar."})
             validar_nueva_contraseña(data['password'], data['password2'])
         else:
             # Flujo de Update (PATCH por Admin)
@@ -89,11 +116,11 @@ class UsuarioSerializer(BaseUsuarioSerializer):
         Crea un nuevo Usuario y sus perfiles de Docente/Coordinador
         basado en los roles asignados.
         """
-        
+
         # 1. Extrae roles y contraseñas
         roles_data = validated_data.pop('roles', [])
-        password = validated_data.pop('password')
-        validated_data.pop('password2', None) # Ya validado en .validate()
+        password = validated_data.pop('password', None)
+        validated_data.pop('password2', None)  # Ya validado en .validate()
 
         # 2. SIEMPRE crea un 'Usuario' base
         # Usamos create_user para hashear la contraseña correctamente
@@ -107,32 +134,33 @@ class UsuarioSerializer(BaseUsuarioSerializer):
             legajo=validated_data.get('legajo'),
             celular=validated_data.get('celular'),
             fecha_nacimiento=validated_data.get('fecha_nacimiento', None),
-            is_active=False # El create original los ponía en False
+            # is_active=False  # El create original los ponía en False
+            is_active=True  # Nuevo: ahora viene activado, no requiere activacion por email
         )
-        
+
         # 3. Asigna los roles en la tabla RolUsuario
         usuario.roles.set(roles_data)
 
         # 4. Crea los perfiles vacíos si los roles existen
         rol_nombres = [rol.nombre.lower() for rol in roles_data]
-        
+
         if "docente" in rol_nombres:
             models.Docente.objects.create(usuario=usuario, activo=True)
-            
+
         if "coordinador" in rol_nombres:
             models.Coordinador.objects.create(usuario=usuario, activo=True)
-            
+
         return usuario
-    
+
     def update(self, instance, validated_data):
         """
         Maneja la actualización de roles (para Admin)
         y llama al 'update' de la base para los otros campos.
-        
+
         Añade lógica para desactivar carreras si se quita el rol
         de Coordinador.
         """
-        
+
         # 1. Extrae los roles antes de llamar al 'update' padre
         roles_data = validated_data.pop('roles', None)
 
@@ -143,12 +171,14 @@ class UsuarioSerializer(BaseUsuarioSerializer):
         if roles_data is not None:
             # Revisa los roles que el usuario TENÍA ANTES
             try:
-                rol_coordinador = models.Rol.objects.get(nombre__iexact="COORDINADOR")
-                era_coordinador = instance.roles.filter(pk=rol_coordinador.pk).exists()
+                rol_coordinador = models.Rol.objects.get(
+                    nombre__iexact="COORDINADOR")
+                era_coordinador = instance.roles.filter(
+                    pk=rol_coordinador.pk).exists()
                 rol_docente = models.Rol.objects.get(nombre__iexact="DOCENTE")
                 era_docente = instance.roles.filter(pk=rol_docente.pk).exists()
             except models.Rol.DoesNotExist:
-                pass # El rol no existe, no hay nada que hacer
+                pass  # El rol no existe, no hay nada que hacer
 
         # 2. Llama al 'update' de BaseUsuarioSerializer
         #    para manejar todos los otros campos (email, nombre, etc.)
@@ -163,24 +193,26 @@ class UsuarioSerializer(BaseUsuarioSerializer):
             # Obtener los nombres de los NUEVOS roles
             rol_nombres_nuevos = [rol.nombre.lower() for rol in roles_data]
             if "docente" in rol_nombres_nuevos:
-                docente_perfil, _ = models.Docente.objects.get_or_create(usuario=instance)
+                docente_perfil, _ = models.Docente.objects.get_or_create(
+                    usuario=instance)
                 if hasattr(docente_perfil, 'activo') and not docente_perfil.activo:
                     docente_perfil.activo = True
                     docente_perfil.save()
-            
+
             if "coordinador" in rol_nombres_nuevos:
-                coordinador_perfil, _ = models.Coordinador.objects.get_or_create(usuario=instance)
+                coordinador_perfil, _ = models.Coordinador.objects.get_or_create(
+                    usuario=instance)
                 if hasattr(coordinador_perfil, 'activo') and not coordinador_perfil.activo:
                     coordinador_perfil.activo = True
                     coordinador_perfil.save()
-            
+
             # --- 3d. Lógica de Desactivación (Ejecución) ---
             if era_coordinador and "coordinador" not in rol_nombres_nuevos:
-                if hasattr(instance, 'coordinador'): 
+                if hasattr(instance, 'coordinador'):
                     coordinador_perfil = instance.coordinador
                     # ¡Se le quitó el rol! Desactivar todas sus carreras activas.
                     models.CarreraCoordinacion.objects.filter(
-                        coordinador=coordinador_perfil, 
+                        coordinador=coordinador_perfil,
                         activo=True
                     ).update(activo=False, fecha_fin=timezone.now())
                 if hasattr(coordinador_perfil, 'activo'):
@@ -190,14 +222,15 @@ class UsuarioSerializer(BaseUsuarioSerializer):
             if era_docente and "docente" not in rol_nombres_nuevos:
                 if hasattr(instance, 'docente'):
                     docente_perfil = instance.docente
-                    
+
                     # Deshabilitar el perfil del Docente
                     if hasattr(docente_perfil, 'activo'):
                         docente_perfil.activo = False
                         docente_perfil.save()
 
         return instance
-    
+
+
 class CarreraCoordinacionSerializer(serializers.ModelSerializer):
     carrera = serializers.StringRelatedField(
         read_only=True
@@ -228,7 +261,8 @@ class CarreraCoordinacionSerializer(serializers.ModelSerializer):
             'id', 'carrera', 'carrera_id', 'coordinador', 'coordinador_id',
             'fecha_inicio', 'fecha_fin', 'activo', 'creado_por', 'creado_por_id'
         ]
-    
+
+
 class CoordinadorSerializer(serializers.ModelSerializer):
     carreras_coordinadas = serializers.SerializerMethodField()
 
@@ -244,15 +278,16 @@ class CoordinadorSerializer(serializers.ModelSerializer):
         Este método filtra y devuelve solo las asignaciones
         de CarreraCoordinacion que están activas.
         """
-        
+
         # Filtramos el 'carreracoordinacion_set' por activo=True
         asignaciones_activas = instance.carreracoordinacion_set.filter(
             activo=True
         )
-        
+
         # Usamos el CarreraCoordinacionSerializer (que ya tenías)
         # para serializar la lista filtrada
         return CarreraCoordinacionSerializer(asignaciones_activas, many=True).data
+
 
 class AdminUsuarioDetalleSerializer(UsuarioSerializer):
     """
@@ -260,7 +295,7 @@ class AdminUsuarioDetalleSerializer(UsuarioSerializer):
     el perfil COMPLETO de un usuario, incluyendo sus
     datos de Docente o Coordinador (si los tiene).
     """
-    
+
     # SerializerMethodField para cargar dinámicamente
     # los datos del rol específico.
     docente_data = serializers.SerializerMethodField(read_only=True)

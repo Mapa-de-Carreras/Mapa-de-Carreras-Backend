@@ -36,11 +36,8 @@ class ComisionListCreateView(APIView):
     def post(self, request):
         serializer = ComisionCreateUpdateSerializer(data=request.data)
         if serializer.is_valid():
-            comision = gestion_comision.crear_comision(serializer.validated_data)
-            return Response({
-                "message": "Comisión creada correctamente.",
-                "data": ComisionSerializer(comision).data
-            }, status=status.HTTP_201_CREATED)
+            gestion_comision.crear_comision(serializer.validated_data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response({
             "message": "Error al crear la comisión.",

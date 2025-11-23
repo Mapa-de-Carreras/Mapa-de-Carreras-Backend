@@ -1,45 +1,11 @@
 
 from rest_framework import serializers
 from gestion_academica.models import PlanDeEstudio,PlanAsignatura,Carrera,Documento,Asignatura,Correlativa
-from .asignatura_serializer import AsignaturaConCorrelativasSerializer
+from .asignatura_serializer import AsignaturaConCorrelativasSerializer,AsignaturaSerializer
 from .carrera_serializer import CarreraSerializerDetail
 from .documento_serializer import DocumentoSerializer
-class PlanAsignaturaSerializer(serializers.ModelSerializer):
-    plan_id = serializers.PrimaryKeyRelatedField(
-        source="plan_de_estudio", queryset=PlanDeEstudio.objects.all(), write_only=True
-    )
-    asignatura_id = serializers.PrimaryKeyRelatedField(
-        source="asignatura", queryset=Asignatura.objects.all(), write_only=True
-    )
 
-    class Meta:
-        model = PlanAsignatura
-        fields = [
-            "id", "plan_id", "asignatura_id", "anio",
-            "horas_teoria", "horas_practica",
-            "horas_semanales", "horas_totales",
-            "created_at", "updated_at"
-        ]
-        read_only_fields = ["id", "horas_totales", "created_at", "updated_at"]
 
-    def validate(self, data):
-        plan = data.get("plan_de_estudio")
-        asignatura = data.get("asignatura")
-
-        if not asignatura.activo:
-            raise serializers.ValidationError(
-                "No se puede asociar una asignatura inactiva al plan de estudio."
-            )
-        
-        if data.get("horas_teoria", 0) < 0 or data.get("horas_practica", 0) < 0:
-            raise serializers.ValidationError("Las horas de teoría o práctica no pueden ser negativas.")
-
-        if PlanAsignatura.objects.filter(plan_de_estudio=plan, asignatura=asignatura).exists():
-            raise serializers.ValidationError(
-                "Esta asignatura ya está asociada a este plan de estudio."
-            )
-
-        return data
 
 class CorrelativaSerializer(serializers.ModelSerializer):
     asignatura_origen = serializers.CharField(source="plan_asignatura.asignatura.nombre", read_only=True)
@@ -201,5 +167,39 @@ class PlanDeEstudioVigenciaSerializer(serializers.ModelSerializer):
     class Meta:
         model = PlanDeEstudio
         fields = ["esta_vigente"]
+        
+        
+
+class PlanAsignaturaSerializer(serializers.ModelSerializer):
+
+    plan_de_estudio = PlanDeEstudioSerializerList(read_only=True)
+    asignatura=AsignaturaSerializer(read_only=True)
+
+    class Meta:
+        model = PlanAsignatura
+        fields = [
+            "id","anio","horas_teoria", "horas_practica","horas_semanales", "horas_totales", "plan_de_estudio","asignatura",
+            "created_at", "updated_at"
+        ]
+        read_only_fields = ["id", "horas_totales", "created_at", "updated_at"]
+
+    def validate(self, data):
+        plan = data.get("plan_de_estudio")
+        asignatura = data.get("asignatura")
+
+        if not asignatura.activo:
+            raise serializers.ValidationError(
+                "No se puede asociar una asignatura inactiva al plan de estudio."
+            )
+        
+        if data.get("horas_teoria", 0) < 0 or data.get("horas_practica", 0) < 0:
+            raise serializers.ValidationError("Las horas de teoría o práctica no pueden ser negativas.")
+
+        if PlanAsignatura.objects.filter(plan_de_estudio=plan, asignatura=asignatura).exists():
+            raise serializers.ValidationError(
+                "Esta asignatura ya está asociada a este plan de estudio."
+            )
+
+        return data
         
 

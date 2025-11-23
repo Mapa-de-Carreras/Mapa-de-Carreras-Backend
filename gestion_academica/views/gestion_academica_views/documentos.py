@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from gestion_academica.serializers import DocumentoSerializer
+from gestion_academica.serializers import DocumentoSerializer,DocumentoDetailSerializer
 from gestion_academica.services import documentos as documento_service
 class DocumentoListCreateView(APIView):
 
@@ -21,7 +21,7 @@ class DocumentoListCreateView(APIView):
 
     @swagger_auto_schema(
         tags=["Gestión Académica - Documentos"],
-        operation_summary="Crear un documento (con archivo)",
+        operation_summary="Crear documento (probar UNICAMENTE en postman)",
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
@@ -35,10 +35,10 @@ class DocumentoListCreateView(APIView):
         responses={201: DocumentoSerializer()}
     )
     def post(self, request):
-        serializer = DocumentoSerializer(data=request.data)
+        serializer = DocumentoDetailSerializer(data=request.data)
         if serializer.is_valid():
             documento = serializer.save()
-            return Response(DocumentoSerializer(documento).data, status=201)
+            return Response(DocumentoDetailSerializer(documento, context={"request": request}).data)
         return Response(serializer.errors, status=400)
 
 
@@ -52,21 +52,38 @@ class DocumentoDetailView(APIView):
     )
     def get(self, request, pk):
         documento = documento_service.obtener_documento(pk)
-        return Response(DocumentoSerializer(documento).data)
+        return Response(DocumentoDetailSerializer(documento, context={"request": request}).data)
 
     @swagger_auto_schema(
         tags=["Gestión Académica - Documentos"],
-        operation_summary="Actualizar un documento",
+        operation_summary="Actualizar un documento (probar UNICAMENTE en postman)",
+        request_body=DocumentoDetailSerializer,
+        responses={200: DocumentoDetailSerializer()}
+    )
+    def put(self, request, pk):
+        documento = documento_service.obtener_documento(pk)
+        serializer = DocumentoDetailSerializer(documento, data=request.data, partial=False)
+        if serializer.is_valid():
+            documento = serializer.save()
+            return Response(DocumentoDetailSerializer(documento, context={"request": request}).data)
+        return Response(serializer.errors, status=400)
+    
+    @swagger_auto_schema(
+        tags=["Gestión Académica - Documentos"],
+        operation_summary="Actualizar un documento (parcialmente)",
         request_body=DocumentoSerializer,
         responses={200: DocumentoSerializer()}
     )
-    def put(self, request, pk):
+    
+    def patch(self, request, pk):
         documento = documento_service.obtener_documento(pk)
         serializer = DocumentoSerializer(documento, data=request.data, partial=True)
         if serializer.is_valid():
             documento = serializer.save()
             return Response(DocumentoSerializer(documento).data)
         return Response(serializer.errors, status=400)
+    
+    
 
     @swagger_auto_schema(
         tags=["Gestión Académica - Documentos"],

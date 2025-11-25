@@ -94,7 +94,14 @@ class DesignacionViewSet(viewsets.ModelViewSet):
         - Admin: Ve todas las designaciones.
         - Coordinador: Ve SÓLO las designaciones de sus carreras activas.
         """
+        if getattr(self, 'swagger_fake_view', False):
+            return models.Designacion.objects.none()
+
         user = self.request.user
+        
+        if not user.is_authenticated:
+            return models.Designacion.objects.none()
+
         qs = models.Designacion.objects.all().order_by("id")
 
         if user.is_superuser or user.roles.filter(nombre__iexact="Admin").exists():
@@ -107,13 +114,16 @@ class DesignacionViewSet(viewsets.ModelViewSet):
                     carreracoordinacion__coordinador=coord_perfil,
                     carreracoordinacion__activo=True
                 )
+
+                # obtenemos sólo los ids (lista) para pasar al filtro __in
+                carreras_ids = list(carreras_activas_qs.values_list('id', flat=True))
                 
                 # --- AQUÍ ESTABA EL ERROR ---
                 # La ruta de tu DesignacionViewSet (de la consulta anterior)
                 # era incorrecta. Debe seguir tus nuevos modelos:
                 # Designacion -> Comision -> PlanAsignatura -> PlanDeEstudio -> Carrera
                 return qs.filter(
-                    comision__plan_asignatura__plan_de_estudio__carrera__in=carreras_activas_qs
+                    comision__plan_asignatura__plan_de_estudio__carrera__in=carreras_ids
                 ).distinct()
 
         return models.Designacion.objects.none()
@@ -138,10 +148,13 @@ class DesignacionViewSet(viewsets.ModelViewSet):
             # obtener el objeto Coordinador asociado al usuario.
             coord = self._coordinador_de_usuario(user)
             if coord:
-                carreras_qs = coord.carreras_coordinadas.all()
-                # filtrar designaciones cuya asignatura pertenece a la carrera del coordinador.
+                carreras_qs = coord.carreras_coordinadas.filter(
+                carreracoordinacion__coordinador=coord,
+                carreracoordinacion__activo=True
+                )
+                carreras_ids = list(carreras_qs.values_list('id', flat=True))
                 qs = qs.filter(
-                    comision__asignatura__planes_de_estudio__carrera__in=carreras_qs
+                    comision__plan_asignatura__plan_de_estudio__carrera__in=carreras_ids
                 ).distinct()
 
         page = self.paginate_queryset(qs)
@@ -268,10 +281,13 @@ class DesignacionViewSet(viewsets.ModelViewSet):
 
         if user.roles.filter(nombre__iexact="Coordinador").exists():
             coord = self._coordinador_de_usuario(user)
-            if coord and not instance.comision.asignatura.planes_de_estudio.filter(
-                    carrera__in=coord.carreras_coordinadas.all(), esta_vigente=True).exists():
-                return Response({"detail": "No tiene permisos para finalizar esta designación."},
-                                status=status.HTTP_403_FORBIDDEN)
+            if coord:
+                carreras_ids = list(coord.carreras_coordinadas.values_list('id', flat=True))
+                # safety: comprobar la existencia usando ids
+                if not instance.comision.asignatura.planes_de_estudio.filter(
+                        carrera__in=carreras_ids, esta_vigente=True).exists():
+                    return Response({"detail": "No tiene permisos para finalizar esta designación."},
+                                    status=status.HTTP_403_FORBIDDEN)
 
         # verificar que al cerrar esta designación la asignatura mantenga al menos un cargo primario
         # if not self._asignatura_tiene_cargo_primary_si_excluyo(instance.comision, excluir_designacion_pk=instance.pk):

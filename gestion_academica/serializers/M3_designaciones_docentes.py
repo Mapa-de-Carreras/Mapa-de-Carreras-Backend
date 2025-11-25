@@ -26,9 +26,19 @@ class ComisionSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
     def get_plan_asignatura_str(self, obj):
-        if obj.plan_asignatura:
-            return str(obj.plan_asignatura)
-        return None
+        try:
+            comision = getattr(obj, "comision", None)
+            if comision is None:
+                return None
+            # accedemos en cadena: comision.plan_asignatura
+            plan_asig = getattr(comision, "plan_asignatura", None)
+            if plan_asig is None:
+                return None
+            # aquí devolvés lo que quieras: nombre o str(plan_asig)
+            return str(plan_asig)
+        except Exception:
+            # por seguridad no romper la serialización si hay cualquier fallo inesperado
+            return None
 
 
 class ComisionCreateUpdateSerializer(serializers.ModelSerializer):

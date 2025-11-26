@@ -41,7 +41,7 @@ class ComisionSerializer(serializers.ModelSerializer):
             return None
 
 
-class ComisionCreateUpdateSerializer(serializers.ModelSerializer):
+class ComisionCreateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = models.Comision
@@ -56,6 +56,34 @@ class ComisionCreateUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 f"Ya existe una comisión llamada '{nombre}' para esta asignatura."
             )
+        return data
+class ComisionUpdateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.Comision
+        fields = ["nombre", "turno", "promocionable", "activo"]
+
+    def validate(self, data):
+        instance = self.instance
+        if not instance:
+            raise serializers.ValidationError("Instance requerida para actualizar.")
+
+        # nombre nuevo o el actual
+        nombre = data.get("nombre", instance.nombre)
+
+        # el plan_asignatura no se cambia en update
+        plan = instance.plan_asignatura
+
+        qs = models.Comision.objects.filter(
+            nombre__iexact=nombre,
+            plan_asignatura=plan
+        ).exclude(id=instance.id)
+
+        if qs.exists():
+            raise serializers.ValidationError(
+                f"Ya existe una comisión llamada '{nombre}' para esta asignatura."
+            )
+
         return data
 
 

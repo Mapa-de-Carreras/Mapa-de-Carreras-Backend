@@ -4,7 +4,8 @@ from rest_framework import status, permissions
 from drf_yasg.utils import swagger_auto_schema
 from gestion_academica.serializers.M3_designaciones_docentes import (
     ComisionSerializer,
-    ComisionCreateUpdateSerializer
+    ComisionCreateSerializer,
+    ComisionUpdateSerializer
 )
 from gestion_academica.services.designaciones_docentes import gestion_comision
 
@@ -28,13 +29,13 @@ class ComisionListCreateView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
-        request_body=ComisionCreateUpdateSerializer,
+        request_body=ComisionCreateSerializer,
         tags=["Gestión Académica - Comisiones"],
         operation_summary="Crear una Comisión",
         operation_description="Crea una nueva comisión para una asignatura.",
     )
     def post(self, request):
-        serializer = ComisionCreateUpdateSerializer(data=request.data)
+        serializer = ComisionCreateSerializer(data=request.data)
         if serializer.is_valid():
             gestion_comision.crear_comision(serializer.validated_data)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -64,15 +65,23 @@ class ComisionDetailView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
-        request_body=ComisionCreateUpdateSerializer,
+        request_body=ComisionUpdateSerializer,
         tags=["Gestión Académica - Comisiones"],
         operation_summary="Actualizar Comisión",
         operation_description="Permite editar una comisión existente (nombre, turno, promoción, etc.)."
     )
-    def put(self, request, pk):
-        serializer = ComisionCreateUpdateSerializer(data=request.data)
+    def patch(self, request, pk):
+
+        comision = gestion_comision.obtener_comision(pk)
+
+        serializer = ComisionUpdateSerializer(
+            instance=comision,  
+            data=request.data,
+            partial=True
+        )
+
         if serializer.is_valid():
-            comision = gestion_comision.actualizar_comision(pk, serializer.validated_data)
+            comision = serializer.save()
             return Response({
                 "message": "Comisión actualizada correctamente.",
                 "data": ComisionSerializer(comision).data

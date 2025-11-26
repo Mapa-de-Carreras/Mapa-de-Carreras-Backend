@@ -56,9 +56,19 @@ class DocenteViewSet(viewsets.ModelViewSet):
 
         # base queryset: Docentes que tienen designaciones en asignaturas de la carrera
         # filtra por plan vigente para evitar duplicados por planes antiguos
+
+        # 1. Obtenemos un queryset con los IDs de los planes de estudio que son válidos
+        #    para la carrera indicada y que están vigentes.
+        planes_vigentes_qs = models.PlanDeEstudio.objects.filter(
+            carrera__id=carrera_id,  # Filtro directo por ForeignKey a Carrera
+            esta_vigente=True        # Filtro por vigencia en PlanDeEstudio
+        )
+
+         # 2. Ahora, usamos este queryset de planes_vigentes_qs para filtrar los Docentes.
+        #    La navegación de la relación M2M (Asignatura <-> PlanDeEstudio) se hace
+        #    utilizando el operador '__in' contra el campo 'planes_de_estudio'.
         qs = models.Docente.objects.filter(
-            designaciones__comision__asignatura__planes_de_estudio__carrera__id=carrera_id,
-            designaciones__comision__asignatura__planes_de_estudio__esta_vigente=True
+            designaciones__comision__plan_asignatura__asignatura__planes_de_estudio__in=planes_vigentes_qs
         ).distinct().order_by("id")
 
         # otra alternativa

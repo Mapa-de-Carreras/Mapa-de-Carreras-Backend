@@ -39,6 +39,31 @@ class ComisionSerializer(serializers.ModelSerializer):
         except Exception:
             # por seguridad no romper la serialización si hay cualquier fallo inesperado
             return None
+        
+class comisionSerializer(serializers.ModelSerializer):
+    plan_asignatura_id = serializers.IntegerField(
+        source="plan_asignatura.id", read_only=True
+    )
+    plan_asignatura_str = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.Comision
+        fields = [
+            "id",
+            "nombre",
+            "turno",
+            "promocionable",
+            "activo",
+            "plan_asignatura_id",
+            "plan_asignatura_str",
+        ]
+        read_only_fields = ["id"]
+
+    def get_plan_asignatura_str(self, obj):
+        if obj.plan_asignatura:
+            return str(obj.plan_asignatura)
+        return None
+
 
 
 class ComisionCreateSerializer(serializers.ModelSerializer):

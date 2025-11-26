@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status, permissions
 from drf_yasg.utils import swagger_auto_schema
 from gestion_academica.serializers.M3_designaciones_docentes import (
-    ComisionSerializer,
+    comisionSerializer,
     ComisionCreateSerializer,
     ComisionUpdateSerializer
 )
@@ -21,11 +21,11 @@ class ComisionListCreateView(APIView):
         tags=["Gestión Académica - Comisiones"],
         operation_summary="Listar Comisiones",
         operation_description="Devuelve todas las comisiones registradas del sistema.",
-        responses={200: ComisionSerializer(many=True)}
+        responses={200: comisionSerializer(many=True)}
     )
     def get(self, request):
         comisiones = gestion_comision.listar_comisiones()
-        serializer = ComisionSerializer(comisiones, many=True)
+        serializer = comisionSerializer(comisiones, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
@@ -57,11 +57,11 @@ class ComisionDetailView(APIView):
         tags=["Gestión Académica - Comisiones"],
         operation_summary="Obtener detalle de una Comisión",
         operation_description="Devuelve la información detallada de una comisión.",
-        responses={200: ComisionSerializer()}
+        responses={200: comisionSerializer()}
     )
     def get(self, request, pk):
         comision = gestion_comision.obtener_comision(pk)
-        serializer = ComisionSerializer(comision)
+        serializer = comisionSerializer(comision)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
@@ -84,7 +84,7 @@ class ComisionDetailView(APIView):
             comision = serializer.save()
             return Response({
                 "message": "Comisión actualizada correctamente.",
-                "data": ComisionSerializer(comision).data
+                "data": comisionSerializer(comision).data
             }, status=status.HTTP_200_OK)
 
         return Response({

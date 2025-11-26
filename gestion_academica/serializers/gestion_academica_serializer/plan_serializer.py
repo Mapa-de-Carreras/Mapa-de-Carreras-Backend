@@ -181,6 +181,10 @@ class PlanAsignaturaSerializer(serializers.ModelSerializer):
         source="asignatura",
         queryset=Asignatura.objects.all()
     )
+    asignatura_nombre = serializers.CharField(
+        source="asignatura.nombre",
+        read_only=True
+    )
     descripcion = serializers.SerializerMethodField()
 
     class Meta:
@@ -189,6 +193,7 @@ class PlanAsignaturaSerializer(serializers.ModelSerializer):
             "id",
             "plan_de_estudio_id",
             "asignatura_id",
+            "asignatura_nombre",
             "anio",
             "horas_teoria",
             "horas_practica",

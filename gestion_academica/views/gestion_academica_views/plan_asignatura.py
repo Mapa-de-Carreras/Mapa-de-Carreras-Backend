@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from gestion_academica.serializers import PlanAsignaturaSerializer
 from gestion_academica.permissions import EsAdministrador
 from gestion_academica.services import plan_asignatura as plan_asignatura_service
@@ -18,7 +19,16 @@ class PlanAsignaturaListCreateView(APIView):
     @swagger_auto_schema(
         tags=["Gestión Académica - PlanAsignatura"],
         operation_summary="Listar PlanAsignatura",
-        responses={200: PlanAsignaturaSerializer(many=True)}
+        responses={200: PlanAsignaturaSerializer(many=True)},
+        manual_parameters=[
+            openapi.Parameter(
+                'plan_id', 
+                in_=openapi.IN_QUERY,  # Indica que es un query parameter
+                type=openapi.TYPE_INTEGER, # Define el tipo de dato esperado
+                description='ID del Plan de Estudio para filtrar las asignaturas asociadas.',
+                required=False # Es un filtro opcional
+            ),
+        ]
     )
     def get(self, request):
         plan_id = request.query_params.get("plan_id")

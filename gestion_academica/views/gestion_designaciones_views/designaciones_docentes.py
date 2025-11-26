@@ -274,6 +274,7 @@ class DesignacionViewSet(viewsets.ModelViewSet):
         estableciendo su fecha_fin = hoy() y activo = False.
         Si la designación ya está inactiva (activo=False), devuelve un error 400.
         """
+        user = request.user
         instance = self.get_object()
         if not instance.activo:
             return Response({"detail": "La designación ya está inactiva."},
@@ -284,7 +285,7 @@ class DesignacionViewSet(viewsets.ModelViewSet):
             if coord:
                 carreras_ids = list(coord.carreras_coordinadas.values_list('id', flat=True))
                 # safety: comprobar la existencia usando ids
-                if not instance.comision.asignatura.planes_de_estudio.filter(
+                if not instance.comision.plan_asignatura.planes_de_estudio.filter(
                         carrera__in=carreras_ids, esta_vigente=True).exists():
                     return Response({"detail": "No tiene permisos para finalizar esta designación."},
                                     status=status.HTTP_403_FORBIDDEN)

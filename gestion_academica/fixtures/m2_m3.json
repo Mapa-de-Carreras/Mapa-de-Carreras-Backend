@@ -107,6 +107,18 @@
             "activo": true
         }
     },
+    {
+        "model": "gestion_academica.docente",
+        "pk": 3,
+        "fields": {
+            "usuario": 2,
+            "modalidad": 3,
+            "caracter": 2,
+            "dedicacion": 2,
+            "cantidad_materias": 2,
+            "activo": true
+        }
+    },
 
     {
         "model": "gestion_academica.parametrosregimen",

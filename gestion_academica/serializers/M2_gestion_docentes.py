@@ -2,6 +2,7 @@
 
 from rest_framework import serializers
 from gestion_academica import models
+from gestion_academica.serializers.user_serializers.role_serializer import RoleSerializer
 
 
 class CaracterSerializer(serializers.ModelSerializer):
@@ -48,11 +49,13 @@ class ParametrosRegimenSerializer(serializers.ModelSerializer):
 
 
 class UsuarioLiteSerializer(serializers.ModelSerializer):
+    roles = RoleSerializer(many=True, read_only=True)
+
     class Meta:
         model = models.Usuario
         fields = [
             "id", "username", "first_name", "last_name",
-            "email", "legajo", "celular"
+            "email", "legajo", "celular", "roles"
         ]
         read_only_fields = fields
 
@@ -168,13 +171,47 @@ class DocenteDetalleSerializer(serializers.ModelSerializer):
 
     # Se traen las designaciones relacionadas
     designaciones = serializers.SerializerMethodField()
+    carreras = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = models.Docente
         fields = [
             "id", "usuario", "modalidad", "dedicacion", "caracter", "cantidad_materias",
-            "designaciones"
+            "designaciones", "carreras"
         ]
+
+    def get_carreras(self, obj):
+        """
+        Devuelve lista de carreras (id, nombre) relacionadas al docente
+        por las designaciones -> comision -> asignatura -> planes_de_estudio -> carrera.
+        """
+        from django.db.models import Q
+        from django.utils import timezone
+        hoy = timezone.now()
+        # obtenemos PlanDeEstudio relacionados con asignaturas que tienen comisiones con designaciones del docente
+        planes_qs = models.PlanDeEstudio.objects.filter(
+            # La ruta corregida:
+            Q(planasignatura__comisiones__designaciones__fecha_fin__isnull=True) |
+            Q(planasignatura__comisiones__designaciones__fecha_fin__gt=hoy),
+            planasignatura__comisiones__designaciones__docente=obj,
+            
+            # Solo de planes vigentes
+            esta_vigente=True,
+            
+            # Solo de designaciones activAS
+            planasignatura__comisiones__designaciones__activo=True,            
+            
+        ).distinct().select_related('carrera')
+
+        # convertir a lista de dicts con id/nombre de carrera (distinct)
+        carreras = []
+        seen = set()
+        for plan in planes_qs:
+            c = plan.carrera
+            if c and c.id not in seen:
+                seen.add(c.id)
+                carreras.append({"id": c.id, "nombre": c.nombre})
+        return carreras
 
     def get_designaciones(self, obj):
         """Devuelve designaciones actuales e históricas del docente."""

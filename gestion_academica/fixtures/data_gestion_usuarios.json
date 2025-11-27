@@ -194,6 +194,14 @@
         }
     },
     {
+        "model": "gestion_academica.rolusuario",
+        "pk": 7,
+        "fields": {
+        "usuario": 2,
+            "rol": 3
+        }
+    },
+    {
         "model": "gestion_academica.notificacion",
         "pk": 1,
         "fields": {

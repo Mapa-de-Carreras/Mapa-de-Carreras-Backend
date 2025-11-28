@@ -8,9 +8,18 @@ def listar_asignaturas(activas=None):
         queryset = queryset.filter(activo=activas)
     return queryset
 
-def obtener_asignatura(pk):
-    """Obtiene una asignatura por su ID."""
-    return get_object_or_404(Asignatura, pk=pk)
+def obtener_asignatura(self, pk, incluir_planes=False):
+    queryset = Asignatura.objects.all()
+    
+    if incluir_planes:
+        # Esto evita el problema N+1 cargando todo en una sola query optimizada
+        queryset = queryset.prefetch_related(
+            'planasignatura_set',
+            'planasignatura_set__plan_de_estudio',
+            'planasignatura_set__plan_de_estudio__carrera'
+        )
+        
+    return get_object_or_404(queryset, pk=pk)
 
 def crear_asignatura(validated_data):
     """Crea una nueva asignatura."""

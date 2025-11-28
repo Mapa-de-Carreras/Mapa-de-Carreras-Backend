@@ -4,14 +4,33 @@ from gestion_academica.models import Instituto,Asignatura,PlanAsignatura,Correla
 
 
 class AsignaturaSerializer(serializers.ModelSerializer):
+    
     class Meta:
         model = Asignatura
         fields = [
             "id", "codigo", "nombre", "activo", "cuatrimestre",
             "tipo_asignatura", "tipo_duracion",
-            "created_at", "updated_at"
+            "created_at", "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at", "activo"]
+
+class AsignaturaDetailSerializer(AsignaturaSerializer):
+    # Asumo que ya creaste el PlanAsignaturaDetalleSerializer en el paso anterior
+    planes_asignatura = serializers.SerializerMethodField()
+
+    class Meta(AsignaturaSerializer.Meta):
+        # Extendemos los campos del padre agregando el nuevo
+        fields = AsignaturaSerializer.Meta.fields + ["planes_asignatura"]
+    
+    def get_planes_asignatura(self, obj):
+        # Hacemos el import AQUÍ ADENTRO para evitar errores circulares
+        from gestion_academica.serializers.gestion_academica_serializer.plan_serializer import PlanAsignaturaDetalleSerializer
+        
+        # Obtenemos la relación inversa
+        qs = obj.planasignatura_set.all().select_related('plan_de_estudio__carrera')
+        
+        # Retornamos la data serializada
+        return PlanAsignaturaDetalleSerializer(qs, many=True).data
 
 
 class AsignaturaConCorrelativasSerializer(serializers.ModelSerializer):

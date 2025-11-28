@@ -245,5 +245,26 @@ class PlanAsignaturaSerializer(serializers.ModelSerializer):
         return data
 
 
-        
+class PlanAsignaturaDetalleSerializer(serializers.ModelSerializer):
+    """
+    Serializa la relación inversa para mostrar en qué planes está la asignatura.
+    """
+    plan_id = serializers.ReadOnlyField(source='plan_de_estudio.id')
+    carrera = serializers.CharField(source='plan_de_estudio.carrera.nombre', default="Desconocida")
+    # Agregamos también el estado del plan por si es útil saber si está vigente
+    plan_vigente = serializers.BooleanField(source='plan_de_estudio.esta_vigente')
+
+    class Meta:
+        model = PlanAsignatura
+        fields = [
+            'id', 
+            'plan_id', 
+            'carrera', 
+            'plan_vigente',
+            'anio', 
+            'horas_teoria', 
+            'horas_practica', 
+            'horas_semanales', 
+            'horas_totales'
+        ]
 

@@ -16,7 +16,7 @@ class PlanDeEstudioListCreateView(APIView):
 
     def get_permissions(self):
         if self.request.method == "POST":
-            return [EsAdministrador()]
+            return [EsAdministrador]
         return [AllowAny()]
 
     @swagger_auto_schema(
@@ -55,7 +55,7 @@ class PlanDeEstudioDetailView(APIView):
 
     def get_permissions(self):
         if self.request.method in ["PUT", "PATCH", "DELETE"]:
-            return [EsAdministrador()]
+            return [EsAdministrador]
         return [AllowAny()]
 
     @swagger_auto_schema(
@@ -105,7 +105,7 @@ class PlanDeEstudioVigenciaView(APIView):
     """Cambiar la vigencia de un Plan de Estudio"""
 
     def get_permissions(self):
-        return [EsAdministrador()]
+        return [EsAdministrador]
 
     @swagger_auto_schema(
         tags=["Gestión Académica - Planes de Estudio"],
@@ -141,7 +141,7 @@ class PlanDeEstudioVigenciaView(APIView):
 
 class ListarCorrelativasDeAsignaturaView(APIView):
     """Lista todas las correlativas de una asignatura dentro de un plan."""
-    permission_classes = [EsAdministrador()]
+    permission_classes = [EsAdministrador]
 
     @swagger_auto_schema(
         manual_parameters=[
@@ -177,7 +177,7 @@ class AsignarCorrelativaView(APIView):
     Asigna una correlativa a una asignatura dentro de un mismo plan de estudio.
     """
 
-    permission_classes = [EsAdministrador()]  # luego se puede cambiar por EsAdministrador | EsCoordinadorDeCarrera
+    permission_classes = [EsAdministrador]  # luego se puede cambiar por EsAdministrador | EsCoordinadorDeCarrera
 
     @swagger_auto_schema(
         request_body=CorrelativaCreateSerializer,
@@ -212,7 +212,7 @@ class EliminarCorrelativaView(APIView):
     Elimina una correlativa específica del plan de estudio.
     """
 
-    permission_classes = [EsAdministrador()]
+    permission_classes = [EsAdministrador]
 
     @swagger_auto_schema(
         tags=["Gestión Académica - Planes de Estudio"],

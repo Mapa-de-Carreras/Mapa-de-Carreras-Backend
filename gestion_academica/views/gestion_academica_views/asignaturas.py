@@ -5,7 +5,7 @@ from rest_framework.permissions import AllowAny
 from gestion_academica.permissions import EsAdministrador
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from gestion_academica.serializers import AsignaturaSerializer,AsignaturaConCorrelativasSerializer
+from gestion_academica.serializers import AsignaturaSerializer, AsignaturaDetailSerializer ,AsignaturaConCorrelativasSerializer
 from gestion_academica.services import asignaturas as asignatura_service
 from gestion_academica.services import plan_de_estudio as planes_de_estudio_service
 
@@ -84,12 +84,12 @@ class AsignaturaDetailView(APIView):
     @swagger_auto_schema(
         tags=["Gestión Académica - Asignaturas"],
         operation_summary="Obtener detalle de una Asignatura",
-        operation_description="Devuelve la información completa de una asignatura específica.",
-        responses={200: AsignaturaSerializer()}
+        operation_description="Devuelve la información completa, incluyendo en qué planes se dicta.",
+        responses={200: AsignaturaDetailSerializer()}
     )
     def get(self, request, pk):
-        asignatura = asignatura_service.obtener_asignatura(pk)
-        serializer = AsignaturaSerializer(asignatura)
+        asignatura = asignatura_service.obtener_asignatura(self, pk, incluir_planes=True)
+        serializer = AsignaturaDetailSerializer(asignatura)
         return Response(serializer.data,status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
@@ -104,7 +104,7 @@ class AsignaturaDetailView(APIView):
         }
     )
     def put(self, request, pk):
-        asignatura = asignatura_service.obtener_asignatura(pk)
+        asignatura = asignatura_service.obtener_asignatura(self, pk)
         serializer = AsignaturaSerializer(asignatura, data=request.data, partial=True)
         if serializer.is_valid():
             asignatura_actualizada = asignatura_service.actualizar_asignatura(pk, serializer.validated_data)
@@ -147,7 +147,7 @@ class AsignaturaConCorrelativasView(APIView):
 
         # obtener plan y asignatura
         plan = planes_de_estudio_service.obtener_plan(pk=plan_id)
-        asignatura = asignatura_service.obtener_asignatura(pk=pk)
+        asignatura = asignatura_service.obtener_asignatura(self, pk)
 
         # validar relación plan ↔ asignatura
         planes_de_estudio_service.validar_asignatura_en_plan(plan, asignatura)

@@ -1,7 +1,7 @@
 # gestion_academica/services/estadisticas_reportes/permisos.py
 
 from rest_framework.exceptions import PermissionDenied
-from gestion_academica.models import CarreraCoordinacion
+from gestion_academica.models import CarreraCoordinacion, Carrera
 
 
 def obtener_carreras_para_estadisticas(user, carrera_id_param=None):
@@ -15,7 +15,25 @@ def obtener_carreras_para_estadisticas(user, carrera_id_param=None):
 
     if not user.is_authenticated:
         raise PermissionDenied("Debe iniciar sesión para acceder a las estadísticas.")
+    
+    # --- PERMISOS DE ADMINISTRADOR ---
+    # Verificamos si es superusuario O si tiene el rol "Administrador" asignado
+    es_admin = user.is_superuser or user.roles.filter(nombre="Administrador").exists()
 
+    if es_admin:
+        # Si pidió una carrera específica
+        if carrera_id_param is not None:
+            try:
+                carrera_id = int(carrera_id_param)
+                # Opcional: Podrías verificar si la carrera existe en BD, 
+                # pero para filtros rápidos basta con devolver el ID.
+                return [carrera_id]
+            except (TypeError, ValueError):
+                raise PermissionDenied("El identificador de carrera es inválido.")
+        
+        # Si NO pidió carrera específica ("Todas"), el Admin ve TODAS las vigentes
+        # Retornamos una lista de IDs de todas las carreras activas
+        return list(Carrera.objects.filter(esta_vigente=True).values_list('id', flat=True))
 
     if not hasattr(user, "coordinador"):
         raise PermissionDenied("Solo los coordinadores de carrera pueden acceder a este módulo.")

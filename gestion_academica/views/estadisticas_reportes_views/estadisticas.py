@@ -122,91 +122,105 @@ class DocentesPorModalidadAPIView(APIView):
 # ================================================================
 # 5.2.2 — HORAS POR DOCENTE
 # ================================================================
+from django.db.models import Sum
 class HorasPorDocenteAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        print(f"DEBUG BACKEND - carrera_id recibido: {request.query_params.get('carrera_id')}")
         carreras_ids = obtener_carreras_para_estadisticas(
             request.user,
             carrera_id_param=request.query_params.get("carrera_id"),
         )
 
-        dedicacion_filtro = request.query_params.get("dedicacion")
-        modalidad_filtro = request.query_params.get("modalidad")
-        horas_min = request.query_params.get("horas_min")
-        horas_max = request.query_params.get("horas_max")
+        filtros_extra = {}
+        if request.query_params.get("dedicacion"):
+            filtros_extra["dedicacion__nombre__iexact"] = request.query_params.get("dedicacion")
+        if request.query_params.get("modalidad"):
+            filtros_extra["modalidad__nombre__iexact"] = request.query_params.get("modalidad")
 
+        # 2. BUSCAR DOCENTES:
+        # Traemos solo los docentes que tengan designaciones activas en el alcance seleccionado
         docentes = (
             Docente.objects.filter(
-                designaciones__fecha_fin__isnull=True,
+                designaciones__activo=True, # Designacion activa
                 designaciones__comision__plan_asignatura__plan_de_estudio__carrera_id__in=carreras_ids,
+                **filtros_extra
             )
             .select_related("usuario", "modalidad", "dedicacion")
             .distinct()
         )
 
-        if dedicacion_filtro:
-            docentes = docentes.filter(dedicacion__nombre__iexact=dedicacion_filtro)
-
-        if modalidad_filtro:
-            docentes = docentes.filter(modalidad__nombre__iexact=modalidad_filtro)
-
         resultados = []
 
+        # 3. CALCULAR HORAS (Aquí estaba el problema antes):
         for doc in docentes:
+            # FILTRO CLAVE:
+            # En lugar de sumar 'todas' las designaciones del docente, sumamos SOLO
+            # las que pertenecen a 'carreras_ids'.
+            # - Si seleccionaste 'Todas', sumará todo el paquete.
+            # - Si seleccionaste 'Sistemas', sumará solo horas de Sistemas.
+            designaciones_validas = doc.designaciones.filter(
+                activo=True,
+                comision__plan_asignatura__plan_de_estudio__carrera_id__in=carreras_ids
+            )
+
+            # Si tras filtrar no queda nada (caso borde), saltamos
+            if not designaciones_validas.exists():
+                continue
+
+            # CALCULO DE HORAS (CORREGIDO SEGÚN TUS MODELOS M1 y M3)
+            # Ruta correcta: Designacion -> Comision -> PlanAsignatura -> horas_semanales
+            agregado = designaciones_validas.aggregate(
+                total_horas=Sum('comision__plan_asignatura__horas_semanales')
+            )
+            total_horas = agregado['total_horas'] or 0
+            
+            # Contar asignaturas únicas (usando el plan_asignatura para evitar duplicados si hay varias comisiones de la misma materia)
+            cantidad_asignaturas = designaciones_validas.values('comision__plan_asignatura').distinct().count()
+
+            # LÓGICA DE RÉGIMEN
+            # Buscamos el régimen que corresponde a la situación contractual del docente
             regimen = ParametrosRegimen.objects.filter(
                 modalidad=doc.modalidad,
                 dedicacion=doc.dedicacion,
                 activo=True,
             ).first()
 
-            if not regimen:
-                horas_frente = 0
-                estado = "SIN_REGIMEN"
-            else:
-                horas_frente = regimen.horas_max_frente_alumnos
-                estado = (
-                    "INSUFICIENTE"
-                    if horas_frente < regimen.horas_min_frente_alumnos
-                    else "DENTRO_DEL_REGIMEN"
-                )
+            estado = "SIN_REGIMEN"
+            if regimen:
+                if total_horas < regimen.horas_min_frente_alumnos:
+                    estado = "INSUFICIENTE"
+                elif total_horas > regimen.horas_max_frente_alumnos: # Opcional: Warning si se pasa
+                    estado = "EXCEDIDO"
+                else:
+                    estado = "DENTRO_DEL_REGIMEN"
+
+            # 4. APLICAR FILTROS DE RANGO DE HORAS (Post-cálculo)
+            horas_min_param = request.query_params.get("horas_min")
+            horas_max_param = request.query_params.get("horas_max")
+            
+            try:
+                if horas_min_param and total_horas < int(horas_min_param):
+                    continue
+                if horas_max_param and total_horas > int(horas_max_param):
+                    continue
+            except ValueError:
+                pass # Ignorar filtros numéricos mal formados
 
             resultados.append(
                 {
                     "docente_id": doc.id,
-                    "docente": str(doc),
-                    "dedicacion": doc.dedicacion.nombre if doc.dedicacion else None,
-                    "modalidad": doc.modalidad.nombre if doc.modalidad else None,
-                    "total_horas_frente_alumnos": horas_frente,
-                    "asignaturas": doc.designaciones.filter(
-                        fecha_fin__isnull=True
-                    ).count(),
+                    "docente": f"{doc.usuario.last_name} {doc.usuario.first_name}", # Usamos los campos de usuario directo
+                    "dedicacion": doc.dedicacion.nombre if doc.dedicacion else "-",
+                    "modalidad": doc.modalidad.nombre if doc.modalidad else "-",
+                    "total_horas_frente_alumnos": total_horas,
+                    "asignaturas": cantidad_asignaturas,
                     "estado_carga": estado,
                 }
             )
 
-        if horas_min or horas_max:
-            try:
-                horas_min = int(horas_min) if horas_min else None
-                horas_max = int(horas_max) if horas_max else None
-            except ValueError:
-                return Response(
-                    {"detail": "Los filtros deben ser numéricos."}, status=400
-                )
-
-            resultados = [
-                r
-                for r in resultados
-                if (horas_min is None or r["total_horas_frente_alumnos"] >= horas_min)
-                and (horas_max is None or r["total_horas_frente_alumnos"] <= horas_max)
-            ]
-
-        if not resultados:
-            return Response(
-                {"detail": "No hay docentes con designaciones activas en esta carrera."},
-                status=404,
-            )
-
+        # Ordenar por horas descendente para ver a los más cargados primero
         resultados.sort(key=lambda x: x["total_horas_frente_alumnos"], reverse=True)
 
         return Response(resultados)

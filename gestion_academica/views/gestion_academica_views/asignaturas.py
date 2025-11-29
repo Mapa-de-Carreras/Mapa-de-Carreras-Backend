@@ -5,9 +5,10 @@ from rest_framework.permissions import AllowAny
 from gestion_academica.permissions import EsAdministrador
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from gestion_academica.serializers import AsignaturaSerializer, AsignaturaDetailSerializer ,AsignaturaConCorrelativasSerializer
+from gestion_academica.serializers import AsignaturaSerializer, AsignaturaDetailSerializer, AsignaturaConCorrelativasSerializer
 from gestion_academica.services import asignaturas as asignatura_service
 from gestion_academica.services import plan_de_estudio as planes_de_estudio_service
+
 
 class AsignaturaListCreateView(APIView):
     """Listar o crear Asignaturas"""
@@ -45,7 +46,7 @@ class AsignaturaListCreateView(APIView):
         if activas is not None:
             msg = f"Listado de asignaturas {'activas' if activas else 'inactivas'}."
 
-        return Response(serializer.data,status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         tags=["Gestión Académica - Asignaturas"],
@@ -61,7 +62,8 @@ class AsignaturaListCreateView(APIView):
     def post(self, request):
         serializer = AsignaturaSerializer(data=request.data)
         if serializer.is_valid():
-            asignatura = asignatura_service.crear_asignatura(serializer.validated_data)
+            asignatura = asignatura_service.crear_asignatura(
+                serializer.validated_data)
             return Response({
                 "message": "Asignatura creada correctamente.",
                 "data": AsignaturaSerializer(asignatura).data
@@ -70,9 +72,8 @@ class AsignaturaListCreateView(APIView):
             "message": "Error al crear la asignatura.",
             "errors": serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
-        
-        
-        
+
+
 class AsignaturaDetailView(APIView):
     """Obtener, actualizar o eliminar una Asignatura"""
 
@@ -88,9 +89,10 @@ class AsignaturaDetailView(APIView):
         responses={200: AsignaturaDetailSerializer()}
     )
     def get(self, request, pk):
-        asignatura = asignatura_service.obtener_asignatura(self, pk, incluir_planes=True)
+        asignatura = asignatura_service.obtener_asignatura(
+            self, pk, incluir_planes=True)
         serializer = AsignaturaDetailSerializer(asignatura)
-        return Response(serializer.data,status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         tags=["Gestión Académica - Asignaturas"],
@@ -105,9 +107,11 @@ class AsignaturaDetailView(APIView):
     )
     def put(self, request, pk):
         asignatura = asignatura_service.obtener_asignatura(self, pk)
-        serializer = AsignaturaSerializer(asignatura, data=request.data, partial=True)
+        serializer = AsignaturaSerializer(
+            asignatura, data=request.data, partial=True)
         if serializer.is_valid():
-            asignatura_actualizada = asignatura_service.actualizar_asignatura(pk, serializer.validated_data)
+            asignatura_actualizada = asignatura_service.actualizar_asignatura(
+                pk, serializer.validated_data)
             return Response({
                 "message": "Asignatura actualizada correctamente.",
                 "data": AsignaturaSerializer(asignatura_actualizada).data
@@ -129,9 +133,8 @@ class AsignaturaDetailView(APIView):
         return Response({
             "message": f"La asignatura '{asignatura.nombre}' fue desactivada correctamente."
         }, status=status.HTTP_200_OK)
-        
-        
-        
+
+
 class AsignaturaConCorrelativasView(APIView):
 
     def get_permissions(self):

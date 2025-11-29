@@ -13,7 +13,7 @@ class PlanAsignaturaListCreateView(APIView):
     
     def get_permissions(self):
         if self.request.method == "POST":
-            return [EsAdministrador]
+            return [EsAdministrador()]
         return [AllowAny()]
 
     @swagger_auto_schema(
@@ -56,7 +56,7 @@ class PlanAsignaturaDetailView(APIView):
     
     def get_permissions(self):
         if self.request.method in ["PUT", "PATCH", "DELETE"]:
-            return [EsAdministrador]
+            return [EsAdministrador()]
         return [AllowAny()]
 
     @swagger_auto_schema(

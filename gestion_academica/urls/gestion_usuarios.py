@@ -11,7 +11,10 @@ from gestion_academica.views import (
     UsuarioViewSet,
     RolViewSet,
     CarreraCoordinacionViewSet,
-    CoordinadorViewSet
+    CoordinadorViewSet,
+
+    # Notificaciones
+    MisNotificacionesViewSet
 )
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework.permissions import AllowAny
@@ -23,6 +26,7 @@ router.register(r'roles', RolViewSet, basename='roles')
 router.register(r'coordinadores', CoordinadorViewSet, basename='coordinadores')
 router.register(r'carrera-coordinacion',
                 CarreraCoordinacionViewSet, basename='carrera-coordinacion')
+router.register(r'mis-notificaciones', MisNotificacionesViewSet, basename='mis-notificaciones')
 
 urlpatterns = [
 
@@ -49,5 +53,4 @@ urlpatterns = [
          RecuperarUsuarioView.as_view(), name='recuperar_username'),
     path('auth/cambiar-contraseña/',
          CambiarContrasenaView.as_view(), name='cambiar_contraseña'),
-
-]
+]    

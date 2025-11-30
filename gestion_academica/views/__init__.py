@@ -7,5 +7,6 @@ from .gestion_academica_views import *
 
 from .gestion_academica_views import *
 from .designaciones_docentes_views import *
-from .gestion_usuarios_views import RolViewSet, UsuarioViewSet, CoordinadorViewSet
+from .gestion_usuarios_views import RolViewSet, UsuarioViewSet, CoordinadorViewSet, MisNotificacionesViewSet
 from .estadisticas_reportes_views import *
+

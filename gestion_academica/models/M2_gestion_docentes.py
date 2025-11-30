@@ -66,7 +66,6 @@ class Docente(models.Model):
         Caracter, on_delete=models.SET_NULL, null=True, blank=True, related_name="docentes")
     dedicacion = models.ForeignKey(
         Dedicacion, on_delete=models.SET_NULL, null=True, blank=True, related_name="docentes")
-    cantidad_materias = models.PositiveIntegerField(default=0)
     activo = models.BooleanField(default=True)
 
     def __str__(self):

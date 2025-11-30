@@ -91,7 +91,6 @@
             "modalidad": 1,
             "caracter": 1,
             "dedicacion": 1,
-            "cantidad_materias": 2,
             "activo": true
         }
     },
@@ -103,7 +102,6 @@
             "modalidad": 3,
             "caracter": 2,
             "dedicacion": 2,
-            "cantidad_materias": 1,
             "activo": true
         }
     },
@@ -115,7 +113,6 @@
             "modalidad": 3,
             "caracter": 2,
             "dedicacion": 2,
-            "cantidad_materias": 2,
             "activo": true
         }
     },

@@ -1,37 +1,5 @@
 [
     {
-        "model": "gestion_academica.rol",
-        "pk": 1,
-        "fields": {
-        "nombre": "Administrador",
-        "descripcion": "Acceso completo a todos los módulos y funcionalidades disponibles."
-        }
-    },
-    {
-        "model": "gestion_academica.rol",
-        "pk": 2,
-        "fields": {
-        "nombre": "Coordinador",
-        "descripcion": "Usuario con acceso a la información académica correspondiente a las carreras que coordina."
-        }
-    },
-    {
-        "model": "gestion_academica.rol",
-        "pk": 3,
-        "fields": {
-        "nombre": "Docente",
-        "descripcion": "Usuario con acceso a los módulos del sistema en modo consulta, con ciertas funciones habilitadas de acuerdo a su rol."
-        }
-    },
-    {
-        "model": "gestion_academica.rol",
-        "pk": 4,
-        "fields": {
-        "nombre": "Usuario General",
-        "descripcion": "Usuario con acceso de solo lectura a la información general del sistema."
-        }
-    },
-    {
         "model": "gestion_academica.usuario",
         "pk": 1,
         "fields": {

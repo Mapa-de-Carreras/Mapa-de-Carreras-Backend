@@ -1,5 +1,6 @@
 # gestion_academica/serializers/M2_gestion_docentes.py
-
+from django.db.models import Q
+from django.utils import timezone
 from rest_framework import serializers
 from gestion_academica import models
 from gestion_academica.serializers.user_serializers.role_serializer import RoleSerializer
@@ -104,6 +105,8 @@ class DocenteSerializer(serializers.ModelSerializer):
 
     carreras = serializers.SerializerMethodField(read_only=True)
 
+    cantidad_materias = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = models.Docente
         # hereda todos los campos de Usuario mas los suyos
@@ -118,8 +121,28 @@ class DocenteSerializer(serializers.ModelSerializer):
         ]
 
         read_only_fields = ["modalidad",
-                            "caracter", "dedicacion", "usuario", "carreras"]
+                            "caracter", "dedicacion", "usuario", "carreras","cantidad_materias"]
+    
+    def get_cantidad_materias(self, obj):
+        """
+        Calcula la cantidad de materias (asignaturas distintas) del docente
+        a partir de sus designaciones activas y vigentes.
+        """
+        from gestion_academica import models as ga
 
+        hoy = timezone.now().date()
+
+        qs = ga.Designacion.objects.filter(
+            docente=obj,
+            activo=True,
+        ).filter(
+            Q(fecha_fin__isnull=True) | Q(fecha_fin__gt=hoy)
+        )
+
+        return qs.values(
+            "comision__planasignatura__asignatura"
+        ).distinct().count()
+    
     def get_carreras(self, obj):
         """
         Devuelve lista de carreras (id, nombre) relacionadas al docente
@@ -179,6 +202,23 @@ class DocenteDetalleSerializer(serializers.ModelSerializer):
             "id", "usuario", "modalidad", "dedicacion", "caracter", "cantidad_materias",
             "designaciones", "carreras"
         ]
+    
+    def get_cantidad_materias(self, obj):
+        from gestion_academica import models as ga
+
+        hoy = timezone.now().date()
+
+        qs = ga.Designacion.objects.filter(
+            docente=obj,
+            activo=True,
+        ).filter(
+            Q(fecha_fin__isnull=True) | Q(fecha_fin__gt=hoy)
+        )
+
+        return qs.values(
+            "comision__planasignatura__asignatura"
+        ).distinct().count()
+
 
     def get_carreras(self, obj):
         """

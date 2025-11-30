@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    "gestion_academica",
+    "gestion_academica.apps.GestionAcademicaConfig",
 
     # --- Apps de Terceros ---
     'rest_framework',

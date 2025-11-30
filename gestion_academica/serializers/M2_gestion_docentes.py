@@ -140,7 +140,7 @@ class DocenteSerializer(serializers.ModelSerializer):
         )
 
         return qs.values(
-            "comision__planasignatura__asignatura"
+            "comision__plan_asignatura__asignatura"
         ).distinct().count()
     
     def get_carreras(self, obj):
@@ -216,7 +216,7 @@ class DocenteDetalleSerializer(serializers.ModelSerializer):
         )
 
         return qs.values(
-            "comision__planasignatura__asignatura"
+            "comision__plan_asignatura__asignatura"
         ).distinct().count()
 
 

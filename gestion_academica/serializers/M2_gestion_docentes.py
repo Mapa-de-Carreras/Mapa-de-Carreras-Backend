@@ -128,6 +128,9 @@ class DocenteSerializer(serializers.ModelSerializer):
         Calcula la cantidad de materias (asignaturas distintas) del docente
         a partir de sus designaciones activas y vigentes.
         """
+        if not obj or not obj.pk:
+            return 0
+
         from gestion_academica import models as ga
 
         hoy = timezone.now().date()
@@ -148,6 +151,9 @@ class DocenteSerializer(serializers.ModelSerializer):
         Devuelve lista de carreras (id, nombre) relacionadas al docente
         por las designaciones -> comision -> asignatura -> planes_de_estudio -> carrera.
         """
+        if not obj or not obj.pk:
+            return []
+
         from django.db.models import Q
         from django.utils import timezone
         hoy = timezone.now()
@@ -196,6 +202,8 @@ class DocenteDetalleSerializer(serializers.ModelSerializer):
     designaciones = serializers.SerializerMethodField()
     carreras = serializers.SerializerMethodField(read_only=True)
 
+    cantidad_materias = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = models.Docente
         fields = [
@@ -204,6 +212,8 @@ class DocenteDetalleSerializer(serializers.ModelSerializer):
         ]
     
     def get_cantidad_materias(self, obj):
+        if not obj or not obj.pk:
+            return 0
         from gestion_academica import models as ga
 
         hoy = timezone.now().date()
@@ -225,6 +235,8 @@ class DocenteDetalleSerializer(serializers.ModelSerializer):
         Devuelve lista de carreras (id, nombre) relacionadas al docente
         por las designaciones -> comision -> asignatura -> planes_de_estudio -> carrera.
         """
+        if not obj or not obj.pk:
+            return []
         from django.db.models import Q
         from django.utils import timezone
         hoy = timezone.now()
